@@ -349,10 +349,9 @@ main( int argc, char *argv[])
 	char *logfile       = NULL;
 	int  logging_method = 0;
 	
-	const char          optstring[] = "c:l:vnhV";
+	const char          optstring[] = "l:vnhV";
 	const struct option long_opts[] =
 	{
-		{ "config"  , required_argument, NULL, 'c'},
 		{ "logfile" , required_argument, NULL, 'l'},
 		{ "verbose" , no_argument      , NULL, 'v'},
 		{ "nodaemon", no_argument      , NULL, 'n'},
@@ -367,10 +366,6 @@ main( int argc, char *argv[])
 	{
 		switch( opt )
 		{
-			case 'c':
-				config_file = optarg;
-				break;
-				
 			case 'l':
 				logfile = optarg;
 				break;

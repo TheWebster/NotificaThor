@@ -20,7 +20,7 @@
 
 #include "com.h"
 
-#define VERSION_STRING "thor-cli v0.1.0"
+#define VERSION_STRING "thor-cli v0.1.1"
 #define USAGE \
 	"usage: thor-cli [options]\n\n" \
 	"    -t, --timeout   Timeout for the popup.\n"\

@@ -10,7 +10,7 @@
 
 
 #define APP_NAME "NotificaThor"
-#define VERSION_STRING  "NotificaThor v0.1.0"
+#define VERSION_STRING  "NotificaThor v0.1.1"
 #define USAGE\
 	"usage: notificathor [OPTIONS]\n\n"\
 	"    -l, --logfile    Specify logfile to use instead of syslog.\n"\
