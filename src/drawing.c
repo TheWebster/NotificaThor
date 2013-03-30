@@ -1,3 +1,12 @@
+/* ********************************************** *\
+ * drawing.c                                      *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Advanced drawing operations.      *
+\* ********************************************** */
+
 
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>

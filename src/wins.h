@@ -1,3 +1,11 @@
+/* ********************************************** *\
+ * wins.h                                         *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Function declarations for wins.c  *
+\* ********************************************** */
 
 
 int  prepare_x();

@@ -1,3 +1,14 @@
+/* ********************************************** *\
+ * NotificaThor.h                                 *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: String definitions, declaration   *
+ *              of functions from 'utils.c'.      *
+\* ********************************************** */
+
+
 #define APP_NAME "NotificaThor"
 #define VERSION_STRING  "NotificaThor v0.1.0"
 #define USAGE\

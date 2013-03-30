@@ -1,3 +1,14 @@
+/* ********************************************** *\
+ * NotificaThor.c                                 *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Main function, event loop and     *
+ *              event handling.                   *
+\* ********************************************** */
+
+
 #define _SOSD_MAIN_
 
 #include <errno.h>

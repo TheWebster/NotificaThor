@@ -1,3 +1,12 @@
+/* ********************************************** *\
+ * config.c                                       *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Config file parsing.              *
+\* ********************************************** */
+
 
 #define _CONFIG_
 #define _GRAPHICAL_

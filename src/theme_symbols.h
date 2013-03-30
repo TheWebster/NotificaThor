@@ -1,3 +1,13 @@
+/* ********************************************** *\
+ * theme_symbols.h                                *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Structures for symbol parsing.    *
+\* ********************************************** */
+ 
+
 typedef struct
 {
 	char string[11];

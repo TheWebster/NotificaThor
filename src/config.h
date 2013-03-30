@@ -1,3 +1,13 @@
+/* ********************************************** *\
+ * config.h                                       *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Extern config variable            *
+ *              declarations.                     *
+\* ********************************************** */
+
 
 int parse_conf( char *config_file);
 

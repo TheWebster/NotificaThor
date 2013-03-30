@@ -1,3 +1,13 @@
+/* ********************************************** *\
+ * drawing.h                                      *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Declaration of the draw_surface() *
+ *              function.                         *
+\* ********************************************** */
+
 
 #define CONTROL_NONE             0
 #define CONTROL_OUTER_BORDER     (1 << 0)

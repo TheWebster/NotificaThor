@@ -1,3 +1,13 @@
+/* ********************************************** *\
+ * theme.h                                        *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Definition of theme struct and    *
+ *              declaration of functions.         *
+\* ********************************************** */
+
 
 /** color macros **/
 #define D_ALPHA( color)                    (double)((color & 0xff000000) >> 24)/ 255

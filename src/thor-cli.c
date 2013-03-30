@@ -1,3 +1,13 @@
+/* ********************************************** *\
+ * thor-cli.c                                     *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Command line client that sends    *
+ *              commands to the daemon.           *
+\* ********************************************** */
+
 
 #include <errno.h>
 #include <getopt.h>

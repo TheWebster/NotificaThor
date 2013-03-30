@@ -1,3 +1,14 @@
+/* ********************************************** *\
+ * com.h                                          *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Function declarations and         *
+ *              message struct for communication  *
+ *              between daemon and client.        *
+\* ********************************************** */
+
 
 #define MSG_ACK  6
 
@@ -13,5 +24,6 @@ typedef struct
 } thor_message;
 
 
-int receive_message( int fd, thor_message *msg);
+/***** functions *****/
+int  receive_message( int fd, thor_message *msg);
 void free_message( thor_message *msg);

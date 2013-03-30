@@ -1,3 +1,14 @@
+/* ********************************************** *\
+ * wins.c                                         *
+ *                                                *
+ * Project:     NotificaThor                      *
+ * Author:      Christian Weber                   *
+ *                                                *
+ * Description: Functions for setting up xcb and  *
+ *              the windows.                      *
+\* ********************************************** */
+
+
 #define _GRAPHICAL_
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
