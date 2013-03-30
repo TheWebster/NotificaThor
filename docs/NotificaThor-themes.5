@@ -1,0 +1,254 @@
+.TH NotificaThor-themes 5 "29 March 2013" "version 0.1.0"
+
+
+
+.SH NAME
+.RB "NotificaThor-themes - Theme files for " NotificaThor (1).
+
+
+
+.SH SYNOPSIS
+.RI $XDG_CONFIG_HOME/NotificaThor/themes/ themefile
+
+
+
+.SH DESCRIPION
+Sosd-themes have the following general form:
+
+.P
+key: value;
+.br
+block
+.br
+{
+.RS
+key: value;
+.br
+block
+.br
+{
+.RS
+key: value;
+.RE
+}
+.RE
+}
+.P
+
+Blocks can be of the types
+.BR surface ", " border ", " linear ", " radial " and " png
+and can contain other blocks as well as key-value-pairs.
+.br
+Key-value-pairs can hold
+.BR numbers ", " colors " and " symbols .
+.br
+Key-value-pairs must be followed by a semicolon, exept for the last pair in a block.
+Whitespaces and newlines are allways ignored, so constructs like
+.RS
+.B key : 
+.br
+.B value;
+.RE
+or even
+.RS
+.B key
+.br
+.B :
+.br
+.B val
+.br
+.B ue ;
+.RE
+are possible (of questionable use, however...).
+
+
+
+.SH BLOCKS
+.SS Outside of any blocks
+.TP
+.BI pad_to_border_x: " number" ;
+Defines the distance of any elements from the left border of the window.
+.TP
+.BI pad_to_border_y: " number" ;
+Defines the distance of any elements from the top border of the window.
+.TP
+.B Surface BACKGROUND {}
+Surface describing the background of the window.
+.TP
+.BR IMAGE{} " and " BAR{}.
+
+.SS Surfaces
+.TP
+.BI radius_topleft: " number" ;
+Radius of the topleft corner in pixels.
+.TP
+.BI radius_topright: " number" ;
+Radius of the topright corner in pixels.
+.TP
+.BI radius_bottomleft: " number" ;
+Radius of the bottomleft corner in pixels.
+.TP
+.BI radius_bottomright: " number" ;
+Radius of the bottomright corner in pixels.
+.TP
+.BI color: " #color" ;
+Adds a solid layer
+.TP
+.RB "Maximum 255 of " linear{} ", " radial{} " or " png{} " and one " border{} .
+
+.SS border{}
+.TP
+.BI type: " symbol" ;
+Determines the coloring of the border. Can be one of
+.BR none ", " solid ", " topleft " and " topright .
+.TP
+.BI width: " number" ;
+Sets the border-width in pixels.
+.TP
+.BI color: " #color" ;
+Used for solid borders and as the bottom color for topleft- and topright-borders.
+For color-formats see
+.BR COLORS .
+.TP
+.BI top-color: " #topcolor" ;
+Used for the top color of topleft- and topright-borders.
+For color-formats see
+.BR COLORS .
+.TP
+.BI operator: " symbol" ;
+.RB "Specifies the drawing operator. See " OPERATORS .
+
+.SS linear{}
+Adds a linear gradient to the surface.
+.TP
+.BI stop: " #color|offset" ;
+Adds a color stop to the gradient.
+.IR #color " specifies the stops color (see"
+.BR COLORS ).
+Offset specifies the the position of the stop; a value of 0 sets it to
+the beginning of the gradient, a value of 1 to the end.
+.TP
+.BI switch: " #color|offset" ;
+.RB "Just like " stop " only that the change in color is aprupt."
+.TP
+.BI angle: " degrees" ;
+.RI "Rotates the gradient clockwise by " degrees .
+.TP
+.BI operator: " symbol" ;
+.RB "Specifies the drawing operator. See " OPERATORS .
+
+.SS radial{}
+Adds a radial gradient to the surface.
+.br
+Radial gradients work just like linear ones, only that the colors form circles, not lines.
+The \(dqbeginning\(dq of a radial gradient is the center of the circles.
+.TP
+.BR stop " & " switch
+like in
+.BR linear{} .
+.TP
+.BI offset_x: " +-number" ;
+.TP
+.BI offset_y: " +-number" ;
+Offset from the center in pixels.
+.TP
+.BI operator: " symbol" ;
+.RB "Specifies the drawing operator. See " OPERATORS .
+
+.SS png{}
+Adds a png to the surface. The filename is specified directly after the
+.BR png .
+If the filename contains whitespaces, it should be enclosed with double-quotes.
+.RB Example: " png \(dq/path/to my/picture.png\(dq { }" .
+.TP
+.BI operator: " symbol" ;
+.RB "Specifies the drawing operator. See " OPERATORS .
+
+.SS IMAGE{}
+Specifies the properties of the displayed image.
+.TP
+.BI x: " number" ;
+.TP
+.BI y: " number" ;
+The position of the image in pixels. If they are never used, all the elemnts will
+be positioned reasonably, but as soon as any
+.BR x " or " y "property is used, NotificaThor will use the values specified in the themefile."
+.TP
+.BI width: " number" ;
+.TP
+.BI height: " number" ;
+The dimensions of the image in pixels. If one of them is set to 0, the image will
+not be displayed at all.
+.TP
+.BI Surface picture{}
+The actual surface.
+
+.SS BAR{}
+Specifies the properties of the bar.
+.TP
+.BI x: " number" ;
+.TP
+.BI y: " number" ;
+The position of the image in pixels. If they are never used, all the elemnts will
+be positioned reasonably, but as soon as any
+.BR x " or " y "property is used, NotificaThor will use the values specified in the themefile."
+.TP
+.BI width: " number" ;
+.TP
+.BI height: " number" ;
+The dimensions of the image in pixels. If one of them is set to 0, the image will
+not be displayed at all.
+.TP
+.BI fill: " symbol" ;
+Specifies how the full part of the bar is filled with the surface. If set to 
+.BR empty ", it is filled relative to the empty part. If set to " full
+, it is filled relative to the full part.
+.TP
+.BI orientation: " symbol" ;
+Specifies where the bar starts and in which direction it is filled. Can be set to
+.BR left-right ", " right-left ", " top-bottom ", " bottom-top .
+.TP
+.BI Surface empty{}
+The surface of the empty part.
+.TP
+.BI Surface ful{}
+The surface of the filled part.
+
+
+
+.SH COLORS
+Specifying colors works a lot like in HTML.
+There are four possible formats:
+.TP
+.B #rrggbb
+Opaque color with one byte for each color, e.g. #ff0000 for Red.
+.TP
+.B #aarrggbb
+Adding control over the alpha channel, e.g #80000000 for a translucent black.
+.TP
+.B #rgb
+Only 16 possibillities for each color component.
+.br
+.BR Note: " #ccc equals #c0c0c0, not #cccccc!"
+.TP
+.B #argb
+Adding control over the alpha channel.
+
+
+
+.SH OPERATORS
+Operators control, how the surface should be drawn over its background.
+.TP
+.B over
+Foreground and background will be mixed, according to the alpha value of the foreground color.
+.TP
+.B source
+The foreground completely replaces the background.
+
+
+
+.SH AUTHOR
+Christian Weber
+
+.SH SEE ALSO
+NotificaThor(1), thor-cli(1)

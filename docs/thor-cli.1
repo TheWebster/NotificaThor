@@ -1,0 +1,62 @@
+.TH thor-cli 1 "27 March 2013" "version 0.1.0"
+
+
+
+.SH NAME
+.RB "thor-cli - Command line ulity to communicate with " NotificaThor (1).
+
+
+
+.SH SYNOPSIS
+thor-cli
+.BI "[-h] [-t " "seconds" "] [-p " "popupfile" "] [-b " "fraction" "]"
+
+
+
+.SH DESCRIPTION
+
+
+
+.SH OPTIONS
+.TP
+.B -h, --help
+Display help message.
+
+.TP
+.B -V, --version
+Display version info.
+
+.TP
+.BI "-t " "seconds" ", --timeout=" "seconds"
+.RI "Window disappears in " seconds " instead of " osd_default_timeout .
+
+.TP
+.BI "-p " popup-file ", --popup=" popup-file
+.RI "Use " popup-file " additional to the default theme."
+
+.TP
+.BI "-b " fraction ", --bar=" fraction
+.RI "Tells the daemon to fill the bar depending on " fraction .
+.br
+.IR fraction " takes the form of " parts / elements "; " 1/2 " will draw the bar half full."
+
+
+
+.SH BUGS
+None.
+
+
+
+.SH AUTHOR
+Christian Weber
+
+
+
+.SH VERSION
+0.1.1
+
+
+
+.SH SEE ALSO
+NotificaThor(1), NotificaThor-themes(5)
+

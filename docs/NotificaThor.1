@@ -1,0 +1,121 @@
+.TH NotificaThor 1 "27 March 2013" "version 0.1.0"
+
+
+.SH NAME
+NotificaThor - Highly configurable on screen displays for X.
+
+
+
+.SH SYNOPSIS
+notificathor
+.BI "[-nvh] [-l " "logfile" "]"
+
+
+
+.SH DESCRIPTION
+NotificaThor is a lightweight and configurable program to display on-screen-notifications on events
+like changing the brightness or ejecting a disk.
+.br
+It consists of a userspace daemon, that runs in the background and a command-line ulity
+that sends messages to the daemon.
+
+
+
+.SH OPTIONS
+.TP
+.B -h, --help
+Display help message.
+
+.TP
+.B -V, --version
+Display version info.
+
+.TP
+.B -v, --verbose
+Print verbose messages.
+
+.TP
+.B -n, --nodaemon
+Don't fork to the background and print to stderr instead of syslog.
+
+.TP
+.BI "-l " logfile ", --logfile=" logfile
+Write messages to filename instead of syslog.
+
+
+
+.SH CONFIGURATION FILE
+The configuration file is placed in
+.IR $XDG_CONFIG_HOME/NotificaThor/rc.conf .
+It follows a simple key=value scheme with the following keys:
+
+.TP
+.BI use_argb= bool
+Determines wether to use an ARGB-visual for the OSD-window or not.
+Using an ARGB-visual enables true transparency when using an compositing-manager
+like compiz or xcompmgr.
+
+.TP
+.BI default_theme= theme-name
+Specifies a filename in the themes directory to use as the default theme.
+
+.TP
+.BI osd_default_x= [:]coordinate
+Specifies the default x-coordinate relative to a centered window.
+A preceeding colon specifies an absolute x-coordinate.
+
+.TP
+.BI osd_default_x= [:]coordinate
+Specifies the default x-coordinate relative to a centered window.
+A preceeding colon specifies an absolute x-coordinate.
+
+.TP
+.BI osd_default_timeout= seconds
+Default timeout in seconds after which the window disapears.
+
+
+
+.SH THEME FILES
+Theme files reside in the
+.IR $XDG_CONFIG_HOME/NotificaThor/themes/ "-directory."
+However, one can put files into
+.IR $XDG_CONFIG_HOME/NotificaThor/ ,
+which contain additional settings, such as different images.
+.br
+These files can be called by the
+.IR --popup "-option of"
+.BR thor-cli (1).
+.br
+.RB "For further details on theming read " NotificaThor-themes (5).
+
+
+
+.SH OTHER FILES
+.TP
+.I $XDG_CACHE_HOME/NotificaThor/PID
+Contains process ID of currently running daemon.
+
+.TP
+.I $XDG_CACHE_HOME/NotificaThor/socket
+Socket to communication between NotificaThor and thor-cli.
+
+
+
+.SH SIGNALS
+Sosd exits gracefully on reception of SIGTERM and SIGINT.
+It rereads rc.conf on reception of SIGHUP, so a command like \(dqkillall -sSIGHUP notificathor\(dq
+will reread the config file.
+
+
+
+.SH BUGS
+None.
+
+.SH AUTHOR
+Christian Weber
+
+.SH VERSION
+0.1.1
+
+.SH SEE ALSO
+thor-cli(1), NotificaThor-themes(5)
