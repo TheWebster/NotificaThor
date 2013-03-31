@@ -7,10 +7,12 @@
  * Description: String definitions, declaration   *
  *              of functions from 'utils.c'.      *
 \* ********************************************** */
-
+#ifndef VERSION
+	#error "Define a version!"
+#endif
 
 #define APP_NAME "NotificaThor"
-#define VERSION_STRING  "NotificaThor v0.1.1"
+#define VERSION_STRING  "NotificaThor "VERSION
 #define USAGE\
 	"usage: notificathor [OPTIONS]\n\n"\
 	"    -l, --logfile    Specify logfile to use instead of syslog.\n"\

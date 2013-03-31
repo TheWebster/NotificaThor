@@ -1,0 +1,5 @@
+IMAGE {
+	picture {
+		png "/usr/share/icons/gnome/256x256/status/dialog-information.png" {}
+	}
+}

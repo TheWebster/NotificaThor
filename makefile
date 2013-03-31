@@ -2,14 +2,19 @@ SHELL   = /bin/sh
 INSTDIR = $(prefix)/usr/bin
 MANDIR  = $(prefix)/usr/share/man
 
+.PHONY: clean-all install uninstall
+
 all:
 	make -Csrc
 	make -Cdocs
 
+debug:
+	make DEBUG=1 -Csrc
+
 clean-all:
+	rm -r bin
 	make -Csrc clean
 	make -Cdocs clean
-	rm -r bin
 
 install: all
 	cp bin/* $(INSTDIR)

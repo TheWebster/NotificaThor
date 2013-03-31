@@ -26,7 +26,7 @@
 
 
 char          _default_theme[MAX_THEME_LEN + 1] = {0};
-unsigned int  _osd_default_timeout = 10;
+double        _osd_default_timeout = 2;
 coord_t       _osd_default_x = {0, 0};
 coord_t       _osd_default_y = {0, 0};
 int           _use_argb = 1;
@@ -155,7 +155,13 @@ parse_conf( char *config_file)
 		else if( target == (void*)_default_theme)
 			strncpy( (char*)target, value, MAX_THEME_LEN);
 		else if( target == (void*)&_osd_default_timeout ) {
-			parse_number( value, (int*)target, 0);
+			char   *endptr;
+			double to = strtod( value, &endptr);
+			
+			if( *endptr == 0 )
+				*(double*)target = to;
+			else
+				thor_log( LOG_ERR, "%s%d - '%s' is not a valid number.", log_msg, line, value);
 		}
 		else if( target == (void*)&_osd_default_x || target == (void*)&_osd_default_y ) {
 			int absflag = 0;

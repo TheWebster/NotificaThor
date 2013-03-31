@@ -1,4 +1,4 @@
-.TH NotificaThor 1 "27 March 2013" "version 0.1.1"
+.TH NotificaThor 1 "27 March 2013" "%%VERSION%%"
 
 
 .SH NAME
@@ -103,13 +103,10 @@ Socket to communication between NotificaThor and thor-cli.
 
 .SH SIGNALS
 Sosd exits gracefully on reception of SIGTERM and SIGINT.
-It rereads rc.conf on reception of SIGHUP, so a command like \(dqkillall -sSIGHUP notificathor\(dq
-will reread the config file.
-
 
 
 .SH BUGS
-None.
+When no theme is specified, there will be an empty window.
 
 .SH AUTHOR
 Christian Weber

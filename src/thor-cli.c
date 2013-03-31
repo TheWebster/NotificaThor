@@ -20,7 +20,12 @@
 
 #include "com.h"
 
-#define VERSION_STRING "thor-cli v0.1.1"
+
+#ifndef VERSION
+	#error "Define a version!"
+#endif
+
+#define VERSION_STRING "thor-cli "VERSION
 #define USAGE \
 	"usage: thor-cli [options]\n\n" \
 	"    -t, --timeout   Timeout for the popup.\n"\

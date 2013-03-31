@@ -1,6 +1,11 @@
-SHELL        = /bin/sh
-CC           = /usr/bin/gcc
-GLOB_FLAGS   = -Wall -Os
+SHELL      = /bin/sh
+CC         = /usr/bin/gcc
+VER        = $(shell cat ../VERSION)
+ifeq ($(DEBUG),1)
+GLOB_FLAGS = -Wall -O0 -g -D 'VERSION="$(VER)"'
+else
+GLOB_FLAGS = -Wall -Os -D 'VERSION="$(VER)"'
+endif
 
 .PHONY: all clean
 

@@ -221,10 +221,15 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 		
 		
 		if( control & CONTROL_OUTER_BORDER ) {
-			x      -= snap;
-			y      -= snap;
-			width  += surface->border.width;
-			height += surface->border.width;
+			x      -= surface->border.width;
+			y      -= surface->border.width;
+			width  += 2*surface->border.width;
+			height += 2*surface->border.width;
+			
+			cairo_rounded_rectangle( cr, x, y, width, height, surface->rad_tl, surface->rad_tr,
+	                                 surface->rad_br, surface->rad_bl);
+	        cairo_reset_clip( cr);
+	        cairo_clip( cr);
 		}
 		
 		cairo_translate( cr, x, y);

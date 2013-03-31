@@ -20,7 +20,7 @@ typedef struct
 
 #define MAX_THEME_LEN 64
 extern char         _default_theme[];
-extern unsigned int _osd_default_timeout;
+extern double       _osd_default_timeout;
 
 #ifdef _GRAPHICAL_
 

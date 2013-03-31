@@ -27,3 +27,6 @@ Build dependencies:
 - libpthread
 
 Simply run 'make install'.
+
+
+Example config files are provided in the config directory.

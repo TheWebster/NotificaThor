@@ -1,0 +1,48 @@
+pad_to_border_x:  20;
+pad_to_border_y:  20;
+
+BACKGROUND
+{
+	linear {
+		stop: #444 | 0;
+		stop: #000 | 1;
+	}
+	border {
+		type: solid;
+		color: #000;
+		width: 1;
+	}
+}
+
+IMAGE
+{
+	width: 128;
+	height: 128;
+}
+
+BAR
+{
+	width: 200;
+	height: 20;
+	
+	empty {
+		linear {
+			operator: source;
+			stop: #8000 | 0;
+		}
+	}
+	full {
+		linear {
+			operator: source;
+			stop:   #e18a51 | 0;
+			switch: #e1621d | 0.5;
+		}
+		
+		border {
+			type:      topleft;
+			width:     1;
+			top-color: #55ffffff;
+			color:     #55000000;
+		}
+	}
+}

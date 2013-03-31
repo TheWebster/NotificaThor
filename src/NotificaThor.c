@@ -232,7 +232,7 @@ event_loop()
 	config_file = (char*)malloc( strlen( config_path) + sizeof("rc.conf"));
 	cpycat( cpycat( config_file, config_path), "rc.conf");
 	
-	themes_path = (char*)malloc( strlen( config_path) + sizeof("themes/"));
+	themes_path = (char*)malloc( strlen( config_path) + sizeof("themes/") + MAX_THEME_LEN);
 	cpycat( cpycat( themes_path, config_path), "themes/");
 	
 	/** generate cache paths **/
@@ -288,7 +288,6 @@ event_loop()
 	
 	
 	thor_log( LOG_DEBUG, "NotificaThor started (%d). Awaiting connections.", getpid());
-  loop:
 	while( 1 )
 	{
 		fd_set set;
@@ -317,14 +316,8 @@ event_loop()
 	if( sig_received ) {
 		if( xerror )
 			thor_log( LOG_DEBUG, "X11: IO-Error ocurred (most likely X-Server exited).");
-		else {
+		else
 			thor_log( LOG_DEBUG, "Received signal %s.", strsignal( sig_received));
-			if( sig_received == SIGHUP ) {
-				parse_conf( config_file);
-				thor_log( LOG_DEBUG, "Reread config file.");
-				goto loop;
-			}
-		}
 	}
 	thor_log( LOG_DEBUG, "Exiting NotificaThor...");
 	close( sockfd);
