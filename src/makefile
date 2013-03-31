@@ -2,18 +2,18 @@ SHELL        = /bin/sh
 CC           = /usr/bin/gcc
 GLOB_FLAGS   = -Wall -Os
 
+.PHONY: all clean
 
 all: ../bin ../bin/notificathor ../bin/thor-cli
 
 clean:
 	rm *.o
 
-.PHONY: all clean
 
 # NotificaThor
 THOR_SRC    = NotificaThor.c logging.c config.c com.c wins.c theme.c drawing.c utils.c
 THOR_OBJ    = $(THOR_SRC:.c=.o)
-THOR_LIBS   = -lrt -lxcb -lcairo
+THOR_LIBS   = -lrt -lxcb -lcairo -pthread
 THOR_CFLAGS = 
 
 ../bin/notificathor: $(THOR_OBJ)

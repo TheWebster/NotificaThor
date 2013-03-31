@@ -36,6 +36,7 @@ static char         *config_file;
 static char         *pidfile;
 static char         *socket_path;
 
+int  xerror = 0;
 char *config_path;
 char *themes_path;
 
@@ -314,11 +315,15 @@ event_loop()
 	cleanup_x();
   err:
 	if( sig_received ) {
-		thor_log( LOG_DEBUG, "Received signal %s.", strsignal( sig_received));
-		if( sig_received == SIGHUP ) {
-			parse_conf( config_file);
-			thor_log( LOG_DEBUG, "Reread config file.");
-			goto loop;
+		if( xerror )
+			thor_log( LOG_DEBUG, "X11: IO-Error ocurred (most likely X-Server exited).");
+		else {
+			thor_log( LOG_DEBUG, "Received signal %s.", strsignal( sig_received));
+			if( sig_received == SIGHUP ) {
+				parse_conf( config_file);
+				thor_log( LOG_DEBUG, "Reread config file.");
+				goto loop;
+			}
 		}
 	}
 	thor_log( LOG_DEBUG, "Exiting NotificaThor...");

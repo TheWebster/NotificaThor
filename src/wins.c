@@ -12,6 +12,8 @@
 #define _GRAPHICAL_
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,15 +31,49 @@
 #include "NotificaThor.h"
 #include "logging.h"
 
+
+typedef struct
+{
+	xcb_window_t win;
+	sem_t        mapped;
+} thor_window_t;
+
+
 static xcb_connection_t *con;
 static xcb_screen_t     *screen;
 static xcb_visualtype_t *visual = NULL;
-static xcb_window_t     osd;
-static int              osd_mapped = 0;
+static thor_window_t    osd;
+static pthread_t        xevents;
 
 /** config from NotificaThor.c **/
+extern int  xerror;
 extern char *config_path;
 extern char *themes_path;
+
+
+/*
+ * Global event loop.
+ */
+static void
+xevent_loop()
+{
+	while( 1 ) {
+		xcb_generic_event_t *event = xcb_wait_for_event( con);
+		if( xcb_connection_has_error( con) ) {
+			xerror = 1;
+			kill( getpid(), SIGINT);
+			return;
+		}
+			
+		switch( event->response_type ) {			
+			case XCB_MAP_NOTIFY:
+				sem_post( &osd.mapped);
+				break;
+		}
+		free( event);
+	}
+};
+
 
 /*
  * Setup all X related data.
@@ -67,7 +103,8 @@ prepare_x()
 		thor_log( LOG_CRIT, "DISPLAY variable not set.");
 		return -1;
 	}
-	if( (con = xcb_connect( env_display, &scr_nbr)) == NULL ) {
+	con = xcb_connect( env_display, &scr_nbr);
+	if( xcb_connection_has_error( con) ) {
 		thor_log( LOG_CRIT, "Could not connect to display '%s'.", env_display);
 		return -1;
 	}
@@ -134,30 +171,35 @@ prepare_x()
 	}
 	
 	/** create window **/
-	osd = xcb_generate_id( con);
+	osd.win = xcb_generate_id( con);
 	if( _use_argb ) {
 		/** create argb window **/
 		cw_value[0] = 0x00000000;
 		cw_value[1] = 0xffffffff;
 		cw_value[2] = 1;
-		cw_value[3] = XCB_EVENT_MASK_EXPOSURE;
+		cw_value[3] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		cw_value[4] = cmap;
-		xcb_create_window( con, 32, osd, screen->root,
+		xcb_create_window( con, 32, osd.win, screen->root,
 	                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
 	                   visual->visual_id, CW_MASK_ARGB, cw_value);
 	}
 	else {
 		cw_value[0] = 1;
-		cw_value[1] = XCB_EVENT_MASK_EXPOSURE;
-		xcb_create_window( con, XCB_COPY_FROM_PARENT, osd, screen->root,
+		cw_value[1] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+		xcb_create_window( con, XCB_COPY_FROM_PARENT, osd.win, screen->root,
 		                   0, 0, 500, 500, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
 		                   visual->visual_id, CW_MASK_RGB, cw_value);
 	}
+	/** init "mapped" semaphore **/
+	sem_init( &osd.mapped, 0, 0);
+	
+	/** start xevent_loop thread **/
+	pthread_create( &xevents, NULL, (void*)xevent_loop, NULL);
 	
 	/** set _NET_WM_WINDOW_TYPE_NOTIFICATION **/
 	wmtype_reply = xcb_intern_atom_reply( con, wmtype_cookie, NULL);
 	note_reply   = xcb_intern_atom_reply( con, note_cookie  , NULL);
-	xcb_change_property( con, XCB_PROP_MODE_REPLACE, osd, wmtype_reply->atom,
+	xcb_change_property( con, XCB_PROP_MODE_REPLACE, osd.win, wmtype_reply->atom,
 	                     XCB_ATOM_ATOM, 32, 1, &note_reply->atom);
 	free( wmtype_reply);
 	free( note_reply);
@@ -200,29 +242,13 @@ show_osd( thor_message *msg)
 		parse_theme( config_path, &theme);
 		go_up( config_path);
 	}
-		
-	/** map and wait for Expose (or parse errors if any) **/
-	if( !osd_mapped ) {
-		xcb_map_window( con, osd);
+	
+	/** wait for window to be mapped **/
+	if( sem_trywait( &osd.mapped) == -1 ) {
+		xcb_map_window( con, osd.win);
 		xcb_flush( con);
-		while( !osd_mapped )
-		{
-			xcb_generic_event_t *event = xcb_wait_for_event( con);
-			switch( event->response_type )
-			{
-				case XCB_EXPOSE:
-					osd_mapped = 1;
-					break;
-				/*
-				 * error handling
-				 */
-			}
-			free( event);
-		}
-		thor_log( LOG_DEBUG, "OSD mapped");
-	}
-	else
-		thor_log( LOG_DEBUG, "OSD remapped");
+		sem_wait( &osd.mapped);
+	}	
 	
 	/** get custom geometry **/
 	cval[2] = 0;
@@ -273,10 +299,10 @@ show_osd( thor_message *msg)
 		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + _osd_default_y.coord; // y
 	
 	/** configure window x, y, width, height**/
-	xcb_configure_window( con, osd, 15, cval);
+	xcb_configure_window( con, osd.win, 15, cval);
 	
 	/** initialize cairo **/
-	cr_osd = cairo_xcb_surface_create( con, osd, visual, cval[2], cval[3]);
+	cr_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
 	cr = cairo_create( cr_osd);
 	
 	/** draw background **/
@@ -333,6 +359,7 @@ show_osd( thor_message *msg)
 	cairo_destroy( cr);
 	cairo_surface_destroy( cr_osd);
 	free_theme( &theme);
+	sem_post( &osd.mapped);
 		
 	return 0;
 };
@@ -344,7 +371,9 @@ show_osd( thor_message *msg)
 void
 cleanup_x()
 {
-	xcb_destroy_window( con, osd);
+	xcb_destroy_window( con, osd.win);
+	sem_destroy( &osd.mapped);
+	pthread_cancel( xevents);
 	xcb_flush( con);
 	xcb_disconnect( con);
 	
@@ -358,8 +387,8 @@ cleanup_x()
 int
 kill_osd()
 {
-	xcb_unmap_window( con, osd);
+	xcb_unmap_window( con, osd.win);
+	sem_wait( &osd.mapped);
 	xcb_flush( con);
-	osd_mapped = 0;
 	return 0;
 };
