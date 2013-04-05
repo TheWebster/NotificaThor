@@ -25,7 +25,7 @@
 	#error "Define a version!"
 #endif
 
-#define VERSION_STRING "thor-cli "VERSION
+#define VERSION_STRING "thor-cli "VERSION"\n"
 #define USAGE \
 	"usage: thor-cli [options]\n\n" \
 	"    -t, --timeout   Timeout for the popup.\n"\

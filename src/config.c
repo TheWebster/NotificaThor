@@ -80,6 +80,49 @@ fgetline( FILE *stream, char *buffer)
 
 
 /*
+ * Parse boolean expression.
+ * 
+ * Parameters: string - Boolean expression to parse.
+ *             target - Target to store value into.
+ */
+static void
+parse_bool( char *string, int *target)
+{
+	if( strcmp( string, "0")         == 0 ||
+	    strcasecmp( string, "false") == 0 ||
+	    strcasecmp( string, "no")    == 0 )
+		 *target = 0;
+	else if( strcmp( string, "1")        == 0 ||
+	         strcasecmp( string, "true") == 0 ||
+	         strcasecmp( string, "yes")  == 0 )
+		 *target = 1;
+	else
+		thor_log( LOG_ERR, "%s%d - '%s' is not a boolean expression.", log_msg, line, string);
+};
+
+
+/*
+ * Parse coordinate.
+ * 
+ * Parameters: string - String to parse.
+ *             target - Coordinate to store value in.
+ */
+static void
+parse_coord( char *string, coord_t *target)
+{
+	int absflag = 0;
+			
+	if( *string == ':' ) {
+		absflag = 1;
+		string++;
+	}
+	
+	if( parse_number( string, &target->coord, 1) == 0 )
+		target->abs_flag = absflag;
+};
+
+
+/*
  * Parses the config file.
  * 
  * Parameters: config_file - Path to config file.
@@ -102,7 +145,6 @@ parse_conf( char *config_file)
 	while( (c = fgetline( fconf, buffer)) != -1 )
 	{
 		char *key, *value;
-		void *target = NULL;
 		
 		
 		line++;
@@ -121,58 +163,30 @@ parse_conf( char *config_file)
 		if( *key == '#' )     // comment
 			continue;
 		
-		if( strcmp( key, "use_argb") == 0 )
-			target = (void*)&_use_argb;
-		else if( strcmp( key, "default_theme") == 0 )
-			target = (void*)_default_theme;
-		else if( strcmp( key, "osd_default_timeout") == 0 )
-			target = (void*)&_osd_default_timeout;
-		else if( strcmp( key, "osd_default_x") == 0 )
-			target = (void*)&_osd_default_x;
-		else if( strcmp( key, "osd_default_y") == 0 )
-			target = (void*)&_osd_default_y;
-		else {
-			thor_log( LOG_ERR, "%s%d - unknown key '%s'.", log_msg, line, key);
-		}
-		
 		if( *value == '\0' ) {
 			thor_log( LOG_ERR, "%s%d - missing value.", log_msg, line);
 			continue;
 		}
 		
-		if( target == (void*)&_use_argb ) {
-			if( strcmp( value, "0")         == 0 ||
-			    strcasecmp( value, "false") == 0 ||
-			    strcasecmp( value, "no")    == 0 )
-				_use_argb = 0;
-			else if( strcmp( value, "1")        == 0 ||
-			         strcasecmp( value, "true") == 0 ||
-			         strcasecmp( value, "yes")  == 0 )
-				_use_argb = 1;
-			else
-				thor_log( LOG_ERR, "%s%d - '%s' is not a valid boolean expression.", log_msg, line, value);
-		}
-		else if( target == (void*)_default_theme)
-			strncpy( (char*)target, value, MAX_THEME_LEN);
-		else if( target == (void*)&_osd_default_timeout ) {
+		if( strcmp( key, "use_argb") == 0 )
+			parse_bool( value, &_use_argb);
+		else if( strcmp( key, "default_theme") == 0 )
+			strncpy( _default_theme, value, MAX_THEME_LEN);
+		else if( strcmp( key, "osd_default_timeout") == 0 ) {
 			char   *endptr;
 			double to = strtod( value, &endptr);
 			
 			if( *endptr == 0 )
-				*(double*)target = to;
+				_osd_default_timeout = to;
 			else
 				thor_log( LOG_ERR, "%s%d - '%s' is not a valid number.", log_msg, line, value);
 		}
-		else if( target == (void*)&_osd_default_x || target == (void*)&_osd_default_y ) {
-			int absflag = 0;
-			
-			if( *value == ':' ) {
-				absflag = 1;
-				value++;
-			}
-			
-			if( parse_number( value, &((coord_t*)target)->coord, 1) == 0 )
-				((coord_t*)target)->abs_flag = absflag;
+		else if( strcmp( key, "osd_default_x") == 0 )
+			parse_coord( value, &_osd_default_x);
+		else if( strcmp( key, "osd_default_y") == 0 )
+			parse_coord( value, &_osd_default_y);
+		else {
+			thor_log( LOG_ERR, "%s%d - unknown key '%s'.", log_msg, line, key);
 		}
 	}
 	fclose( fconf);

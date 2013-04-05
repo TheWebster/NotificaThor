@@ -197,7 +197,7 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 	cairo_rounded_rectangle( cr, x, y, width, height, surface->rad_tl, surface->rad_tr,
 	                         surface->rad_br, surface->rad_bl);
 	
-	if( control & CONTROL_USE_SAVED_MATRIX )
+	if( control & CONTROL_USE_SAVED )
 		cairo_restore( cr);
 	else {
 		cairo_translate( cr, x, y);
@@ -210,9 +210,14 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 		cairo_fill_preserve( cr);
 	}
 	
-	cairo_clip( cr);
 	if( control & CONTROL_PRESERVE_MATRIX )
 		cairo_save( cr);
+	
+	cairo_clip( cr);
+	
+	if( control & CONTROL_PRESERVE_CLIP )
+		cairo_save( cr);
+	
 	cairo_identity_matrix( cr);
 	
 	if( surface->border.type != BORDER_TYPE_NONE ) {

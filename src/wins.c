@@ -34,8 +34,8 @@
 
 typedef struct
 {
-	xcb_window_t win;
-	sem_t        mapped;
+	xcb_window_t win;     // XCB window
+	sem_t        mapped;  // value is 0 when window is unmapped and 1 if mapped
 } thor_window_t;
 
 
@@ -59,6 +59,8 @@ xevent_loop()
 {
 	while( 1 ) {
 		xcb_generic_event_t *event = xcb_wait_for_event( con);
+		
+		
 		if( xcb_connection_has_error( con) ) {
 			xerror = 1;
 			kill( getpid(), SIGINT);
@@ -317,36 +319,38 @@ show_osd( thor_message *msg)
 	/** draw bar **/
 	if( theme.bar.width > 0 && theme.bar.height > 0 ) {
 		double fraction = (double)msg->bar_part / msg->bar_elements;
-		int    flags    = 0;
+		int    flags    = CONTROL_USE_SAVED;
 		
 		
 		if( theme.bar.fill_rule == FILL_EMPTY_RELATIVE )
-			flags = CONTROL_PRESERVE_MATRIX|CONTROL_USE_SAVED_MATRIX;
+			flags |= CONTROL_PRESERVE_MATRIX;
+		else
+			flags |= CONTROL_PRESERVE_CLIP;
 		
-		draw_surface( cr, &theme.bar.empty, CONTROL_OUTER_BORDER|(flags & CONTROL_PRESERVE_MATRIX),
+		draw_surface( cr, &theme.bar.empty, CONTROL_OUTER_BORDER|(flags & CONTROL_PRESERVE),
 		              theme.bar.x, theme.bar.y, theme.bar.width, theme.bar.height);
 		switch( theme.bar.orientation ) {
 			case ORIENT_LEFTRIGHT:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED_MATRIX,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
 				              theme.bar.x, theme.bar.y, theme.bar.width * fraction,
 				              theme.bar.height);
 				break;
 			
 			case ORIENT_RIGHTLEFT:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED_MATRIX,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
 				              theme.bar.x + theme.bar.width * (1 - fraction),
 				              theme.bar.y, theme.bar.width * fraction,
 				              theme.bar.height);
 				break;
 			
 			case ORIENT_TOPBOTTOM:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED_MATRIX,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
 				              theme.bar.x, theme.bar.y, theme.bar.width,
 				              theme.bar.height * fraction);
 				break;
 				
 			case ORIENT_BOTTOMTOP:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED_MATRIX,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
 				              theme.bar.x, theme.bar.y + theme.bar.height * (1 - fraction),
 				              theme.bar.width, theme.bar.height * fraction);
 				break;
