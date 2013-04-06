@@ -21,6 +21,8 @@
 #include "logging.h"
 
 
+struct fbs_t fallback_surface;
+
 /*
  * Draws a rectangle with rounded corners.
  * 
@@ -204,9 +206,16 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 		cairo_scale( cr, width, height);
 	}
 	
-	for( i = 0; i < surface->nlayers; i++ ) {
-		cairo_set_source( cr, surface->layer[i].pattern);
-		cairo_set_operator( cr, surface->layer[i].operator);
+	if( surface->nlayers ) {
+		for( i = 0; i < surface->nlayers; i++ ) {
+			cairo_set_source( cr, surface->layer[i].pattern);
+			cairo_set_operator( cr, surface->layer[i].operator);
+			cairo_fill_preserve( cr);
+		}
+	}
+	else {    //fallback
+		cairo_set_source_rgba( cr, cairo_rgba( fallback_surface.surf_color));
+		cairo_set_operator( cr, fallback_surface.surf_op);
 		cairo_fill_preserve( cr);
 	}
 	

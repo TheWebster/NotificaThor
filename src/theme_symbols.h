@@ -17,9 +17,16 @@ typedef struct
 
 theme_symbol_t operators[] =
 {
-	{ "over"   , CAIRO_OPERATOR_OVER   },
-	{ "source" , CAIRO_OPERATOR_SOURCE },
-	{ {0}      , 0                     }
+	{ "over"       , CAIRO_OPERATOR_OVER        },
+	{ "dest_over"  , CAIRO_OPERATOR_DEST_OVER   },
+	{ "source"     , CAIRO_OPERATOR_SOURCE      },
+	{ "xor"        , CAIRO_OPERATOR_XOR         },
+	{ "add"        , CAIRO_OPERATOR_ADD         },
+	{ "difference" , CAIRO_OPERATOR_DIFFERENCE  },
+	{ "darken"     , CAIRO_OPERATOR_DARKEN      },
+	{ "color_dodge", CAIRO_OPERATOR_COLOR_DODGE },
+	{ "color_burn" , CAIRO_OPERATOR_COLOR_BURN  },
+	{ {0}          , 0                          }
 };
 
 theme_symbol_t border_types[] =

@@ -8,6 +8,13 @@
  *              function.                         *
 \* ********************************************** */
 
+struct fbs_t
+{
+	uint32_t         surf_color;
+	cairo_operator_t surf_op;
+};
+
+extern struct fbs_t fallback_surface;
 
 #define CONTROL_NONE             0
 #define CONTROL_OUTER_BORDER     (1 << 0)

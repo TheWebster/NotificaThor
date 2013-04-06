@@ -237,13 +237,41 @@ Adding control over the alpha channel.
 
 
 .SH OPERATORS
-Operators control, how the surface should be drawn over its background.
+Operators control, how the surface should be drawn over the background.
+The operators used here are identical with their cairo counterparts.
+For further infos visit
+.IR http://www.cairographics.com/operators .
 .TP
 .B over
-Foreground and background will be mixed, according to the alpha value of the foreground color.
+Foreground and background will be mixed, depending to the alpha of the foreground color.
+.TP
+.B dest_over
+.RB "Similar to " over ", foreground and background will be mixed, depending on the alpha"
+.RI "of the " background .
 .TP
 .B source
 The foreground completely replaces the background.
+.TP
+.B xor
+Performes bitwise XOR-operation on each pixel.
+.TP
+.B add
+Adds foreground and background.
+.TP
+.B difference
+The resulting color value is the difference between foreground- and background-values.
+.TP
+.B darken
+Selects the darker of the color values in each ARGB component.
+.TP
+.B lighten
+Selects the lighter of the color values in each ARGB component.
+.TP
+.B color_dodge
+Brightens the destination color by a factor depending on the source color.
+.TP
+.B color_burn
+Darkens the background by a factor depending on the foreground color.
 
 
 

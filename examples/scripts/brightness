@@ -1,0 +1,6 @@
+#!/bin/bash
+
+max_brightness=$(cat /sys/class/backlight/acpi_video0/max_brightness)
+brightness=$(cat /sys/class/backlight/acpi_video0/brightness)
+
+thor-cli -p bright -b"$brightness/$max_brightness"

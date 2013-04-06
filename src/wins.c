@@ -245,6 +245,20 @@ show_osd( thor_message *msg)
 		go_up( config_path);
 	}
 	
+	/** fallback bar-width and -height **/
+	if( msg->bar_part > 0 && (theme.bar.width == 0 || theme.bar.height == 0) ) {
+		theme.bar.width  = 200;
+		theme.bar.height = 15;
+	}
+	
+	/** stop here if there is nothing to be done **/
+	if( (theme.bar.width   == 0 || theme.bar.height   == 0) &&
+	    (theme.image.width == 0 || theme.image.height == 0) )
+	{
+		thor_log( LOG_ERR, "Not elements to be drawn.");
+		return -1;
+	}
+	
 	/** wait for window to be mapped **/
 	if( sem_trywait( &osd.mapped) == -1 ) {
 		xcb_map_window( con, osd.win);
@@ -308,6 +322,8 @@ show_osd( thor_message *msg)
 	cr = cairo_create( cr_osd);
 	
 	/** draw background **/
+	fallback_surface.surf_color   = 0xff000000;
+	fallback_surface.surf_op      = CAIRO_OPERATOR_OVER;
 	draw_surface( cr, &theme.background, CONTROL_NONE, 0, 0, cval[2], cval[3]);
 	
 	
@@ -326,9 +342,13 @@ show_osd( thor_message *msg)
 			flags |= CONTROL_PRESERVE_MATRIX;
 		else
 			flags |= CONTROL_PRESERVE_CLIP;
-		
+			
+		fallback_surface.surf_color = 0;
 		draw_surface( cr, &theme.bar.empty, CONTROL_OUTER_BORDER|(flags & CONTROL_PRESERVE),
 		              theme.bar.x, theme.bar.y, theme.bar.width, theme.bar.height);
+		
+		fallback_surface.surf_color = 0xffffffff;
+		fallback_surface.surf_op    = CAIRO_OPERATOR_DIFFERENCE;
 		switch( theme.bar.orientation ) {
 			case ORIENT_LEFTRIGHT:
 				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
