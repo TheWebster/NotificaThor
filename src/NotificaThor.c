@@ -130,6 +130,63 @@ handle_message( int sockfd, timer_t timer)
 
 
 /*
+ * Initialize Inotify watch on config file.
+ * 
+ * Returns: Filedescriptor for Inotify or -1 on error.
+ */
+static int
+init_inotify()
+{
+	int inofd = -1;
+	
+	
+	if( (inofd = inotify_init()) != -1 ) {
+		if( inotify_add_watch( inofd, config_file, IN_CLOSE_WRITE|IN_MODIFY) == -1 ) {
+			thor_errlog( LOG_ERR, "Could not add watch on config file");
+			close( inofd);
+			inofd = -1;
+		}
+	}
+	else
+		thor_errlog( LOG_ERR, "Could not initialize inotify");
+	
+	return inofd;
+};
+
+
+/*
+ * Handles Inotify-events on config file.
+ * 
+ * Parameters: fd       - Pointer to Inotify descriptor.
+ *             ino_time - Pointer to the last time of Inotify-event.
+ */
+#define IN_EVENT_SIZE    (sizeof(struct inotify_event) + FILENAME_MAX + 1)
+#define IN_BUFF_SIZE     (16*IN_EVENT_SIZE)
+static void
+handle_inotify( int *fd, time_t *ino_time)
+{
+	char buffer[IN_BUFF_SIZE];
+	
+	
+	read( *fd, buffer, IN_BUFF_SIZE);
+	/* check if the last inotify event was at least one second ago,
+	 * because most text editors do strange things instead of simply
+	 * writing text to a file...
+	 */
+	if( *ino_time < time( NULL) ) {
+		thor_log( LOG_DEBUG, "Rereading config file...");
+		sleep(1);
+		parse_conf( config_file);
+		query_extensions();
+		*ino_time = time( NULL);
+	}
+	
+	close( *fd);
+	*fd = init_inotify();
+}
+
+
+/*
  * Checks for running instances of the daemon via PID file.
  * 
  * Returns: 0 if no instance is running, -1 if an instance
@@ -273,15 +330,7 @@ event_loop()
 		goto err;
 	
 	/** initialize inotify watch on config file **/
-	if( (inofd = inotify_init()) != -1 ) {
-		if( inotify_add_watch( inofd, config_file, IN_CLOSE_WRITE|IN_MODIFY) == -1 ) {
-			thor_errlog( LOG_ERR, "Could not add watch on config file");
-			close( inofd);
-			inofd = -1;
-		}
-	}
-	else
-		thor_errlog( LOG_ERR, "Could not initialize inotify");
+	inofd = init_inotify();
 	
 	/** opening socket **/
 	if( (sockfd = socket( AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
@@ -325,21 +374,8 @@ event_loop()
 		}
 		
 		/** changes in config file **/
-		else if( FD_ISSET( inofd, &set) ) {
-			char buffer[sizeof(struct inotify_event) + 1];
-			
-			
-			while( read( inofd, buffer, sizeof(struct inotify_event) + 1) != -1 );
-			/* check if the last inotify event was at least one second ago,
-			 * because most text editors do strange things instead of simply
-			 * writing text to a file...
-			 */
-			if( ino_time < time( NULL) ) {
-				thor_log( LOG_DEBUG, "Rereading config file...");
-				parse_conf( config_file);
-				ino_time = time( NULL);
-			}
-		}
+		else if( FD_ISSET( inofd, &set) )
+			handle_inotify( &inofd, &ino_time);
 	}
 		
 	return 0;

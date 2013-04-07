@@ -82,7 +82,7 @@ xevent_loop()
 /*
  * Queries X extensions.
  */
-static void
+void
 query_extensions()
 {
 	const xcb_query_extension_reply_t *qext_reply;
