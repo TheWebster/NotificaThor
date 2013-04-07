@@ -358,13 +358,13 @@ show_osd( thor_message *msg)
 	/** draw bar **/
 	if( theme.bar.width > 0 && theme.bar.height > 0 ) {
 		double fraction = (double)msg->bar_part / msg->bar_elements;
-		int    flags    = CONTROL_USE_SAVED;
+		int    flags;
 		
 		
 		if( theme.bar.fill_rule == FILL_EMPTY_RELATIVE )
-			flags |= CONTROL_PRESERVE_MATRIX;
+			flags = CONTROL_PRESERVE_MATRIX|CONTROL_USE_MATRIX;
 		else
-			flags |= CONTROL_PRESERVE_CLIP;
+			flags = CONTROL_PRESERVE_CLIP|CONTROL_USE_CLIP;
 			
 		fallback_surface.surf_color = 0;
 		draw_surface( cr, &theme.bar.empty, CONTROL_OUTER_BORDER|(flags & CONTROL_PRESERVE),
@@ -374,26 +374,26 @@ show_osd( thor_message *msg)
 		fallback_surface.surf_op    = CAIRO_OPERATOR_DIFFERENCE;
 		switch( theme.bar.orientation ) {
 			case ORIENT_LEFTRIGHT:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
 				              theme.bar.x, theme.bar.y, theme.bar.width * fraction,
 				              theme.bar.height);
 				break;
 			
 			case ORIENT_RIGHTLEFT:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
 				              theme.bar.x + theme.bar.width * (1 - fraction),
 				              theme.bar.y, theme.bar.width * fraction,
 				              theme.bar.height);
 				break;
 			
 			case ORIENT_TOPBOTTOM:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
 				              theme.bar.x, theme.bar.y, theme.bar.width,
 				              theme.bar.height * fraction);
 				break;
 				
 			case ORIENT_BOTTOMTOP:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_SAVED,
+				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
 				              theme.bar.x, theme.bar.y + theme.bar.height * (1 - fraction),
 				              theme.bar.width, theme.bar.height * fraction);
 				break;
