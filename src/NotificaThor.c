@@ -12,12 +12,14 @@
 #define _SOSD_MAIN_
 
 #include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include <sys/inotify.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
@@ -195,7 +197,6 @@ sig_handler( int sig)
 static void
 timeout_handler()
 {
-	thor_log( LOG_DEBUG, "Popup timeout reached.");
 	kill_osd();
 	return;
 };
@@ -210,11 +211,13 @@ static int
 event_loop()
 {
 	int                 sockfd = 0;
+	int                 inofd  = 0;
 	struct sockaddr_un  saddr;
 	struct sigaction    term_sa    = {{0}};
 	struct sigevent     ev_timeout = {{0}};
 	timer_t             timer;
 	char                *env;
+	time_t              ino_time  = time( NULL);
 	
 		
 	/** generate config paths **/
@@ -268,7 +271,18 @@ event_loop()
 	/** prepare window **/
 	if( prepare_x() == -1 )
 		goto err;
-		
+	
+	/** initialize inotify watch on config file **/
+	if( (inofd = inotify_init()) != -1 ) {
+		if( inotify_add_watch( inofd, config_file, IN_CLOSE_WRITE|IN_MODIFY) == -1 ) {
+			thor_errlog( LOG_ERR, "Could not add watch on config file");
+			close( inofd);
+			inofd = -1;
+		}
+	}
+	else
+		thor_errlog( LOG_ERR, "Could not initialize inotify");
+	
 	/** opening socket **/
 	if( (sockfd = socket( AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
 		thor_errlog( LOG_CRIT, "Creating socket");
@@ -286,14 +300,17 @@ event_loop()
 		goto err_x;
 	}
 	
-	
+	/** event loop **/
 	thor_log( LOG_DEBUG, "NotificaThor started (%d). Awaiting connections.", getpid());
 	while( 1 )
 	{
 		fd_set set;
 		
+		
 		FD_ZERO( &set);
 		FD_SET( sockfd, &set);
+		if( inofd != -1 )
+			FD_SET( inofd, &set);
 		
 		if( select( sockfd + 1, &set, NULL, NULL, NULL) == -1 ) {
 			if( errno != EINTR )
@@ -301,10 +318,28 @@ event_loop()
 			goto err_x;
 		}
 		
+		/** message via thor-cli **/
 		if( FD_ISSET( sockfd, &set) ) {
 			if( handle_message( sockfd, timer) == -1 )
 				goto err_x;
-		}		
+		}
+		
+		/** changes in config file **/
+		else if( FD_ISSET( inofd, &set) ) {
+			char buffer[sizeof(struct inotify_event) + 1];
+			
+			
+			while( read( inofd, buffer, sizeof(struct inotify_event) + 1) != -1 );
+			/* check if the last inotify event was at least one second ago,
+			 * because most text editors do strange things instead of simply
+			 * writing text to a file...
+			 */
+			if( ino_time < time( NULL) ) {
+				thor_log( LOG_DEBUG, "Rereading config file...");
+				parse_conf( config_file);
+				ino_time = time( NULL);
+			}
+		}
 	}
 		
 	return 0;

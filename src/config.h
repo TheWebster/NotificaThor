@@ -28,6 +28,7 @@ extern double       _osd_default_timeout;
 extern coord_t        _osd_default_x;
 extern coord_t        _osd_default_y;
 extern int            _use_argb;
+extern int            _use_xshape;
 	
 #endif
 	

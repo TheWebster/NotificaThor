@@ -26,10 +26,11 @@
 
 
 char          _default_theme[MAX_THEME_LEN + 1] = {0};
-double        _osd_default_timeout = 2;
-coord_t       _osd_default_x = {0, 0};
-coord_t       _osd_default_y = {0, 0};
-int           _use_argb = 1;
+double        _osd_default_timeout              = 2;
+coord_t       _osd_default_x                    = {0, 0};
+coord_t       _osd_default_y                    = {0, 0};
+int           _use_argb                         = 1;
+int           _use_xshape                       = 0;
 
 
 #define MAX_LINE_LEN      FILENAME_MAX + 64
@@ -170,6 +171,12 @@ parse_conf( char *config_file)
 		
 		if( strcmp( key, "use_argb") == 0 )
 			parse_bool( value, &_use_argb);
+		else if( strcmp( key, "use_xshape") == 0 ) {
+			if( strcmp( value, "whole") == 0 )
+				_use_xshape = 2;
+			else
+				parse_bool( value, &_use_xshape);
+		}
 		else if( strcmp( key, "default_theme") == 0 )
 			strncpy( _default_theme, value, MAX_THEME_LEN);
 		else if( strcmp( key, "osd_default_timeout") == 0 ) {

@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
+#include <xcb/shape.h>
 
 #include "com.h"
 #include "theme.h"
@@ -44,6 +45,7 @@ static xcb_screen_t     *screen;
 static xcb_visualtype_t *visual = NULL;
 static thor_window_t    osd;
 static pthread_t        xevents;
+static int              has_xshape = 0;
 
 /** config from NotificaThor.c **/
 extern int  xerror;
@@ -73,6 +75,25 @@ xevent_loop()
 				break;
 		}
 		free( event);
+	}
+};
+
+
+/*
+ * Queries X extensions.
+ */
+static void
+query_extensions()
+{
+	const xcb_query_extension_reply_t *qext_reply;
+	
+	
+	// SHAPE extension
+	if( _use_xshape ) {
+		qext_reply = xcb_get_extension_data( con, &xcb_shape_id);
+		has_xshape = qext_reply->present;
+		if( !has_xshape )
+			thor_log( LOG_DEBUG, "SHAPE extension not activated.");
 	}
 };
 
@@ -120,6 +141,8 @@ prepare_x()
 	}
 	screen = scr_iter.data;
 	
+	/** Query X extensions **/
+	query_extensions();
 	
 	/** get atoms **/
 	wmtype_cookie = xcb_intern_atom( con, 1, 19, "_NET_WM_WINDOW_TYPE");
@@ -222,7 +245,7 @@ show_osd( thor_message *msg)
 	thor_theme      theme = {0};
 	uint32_t        cval[4] = {0};
 	cairo_t         *cr = NULL;
-	cairo_surface_t *cr_osd = NULL;
+	cairo_surface_t *surf_osd = NULL;
 	
 	
 	/** set default theme **/
@@ -318,8 +341,8 @@ show_osd( thor_message *msg)
 	xcb_configure_window( con, osd.win, 15, cval);
 	
 	/** initialize cairo **/
-	cr_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
-	cr = cairo_create( cr_osd);
+	surf_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
+	cr = cairo_create( surf_osd);
 	
 	/** draw background **/
 	fallback_surface.surf_color   = 0xff000000;
@@ -376,12 +399,40 @@ show_osd( thor_message *msg)
 				break;
 		}		
 	}
-		
+	
 	xcb_flush( con);
+	
+	/** apply SHAPE **/
+	if( has_xshape ) {
+		xcb_pixmap_t    bm_shape   = xcb_generate_id( con);
+		cairo_surface_t *surf_shape;
+		cairo_t         *cr_shape;
+		
+		
+		xcb_create_pixmap( con, 1, bm_shape, osd.win, cval[2], cval[3]);
+		surf_shape = cairo_xcb_surface_create_for_bitmap( con, screen, bm_shape, cval[2], cval[3]);
+		cr_shape   = cairo_create( surf_shape);
+		
+		/** clear bitmap (completely click-through) **/
+		cairo_set_operator( cr_shape, CAIRO_OPERATOR_CLEAR);
+		cairo_paint( cr_shape);
+		
+		/** use windows surface as mask **/
+		if( _use_xshape != 2 ) {
+			cairo_set_operator( cr_shape, CAIRO_OPERATOR_OVER);
+			cairo_mask_surface( cr_shape, surf_osd, 0, 0);
+		}
+		
+		cairo_destroy( cr_shape);
+		cairo_surface_destroy( surf_shape);
+		
+		xcb_shape_mask( con, XCB_SHAPE_SO_SET, XCB_SHAPE_SK_INPUT, osd.win, 0, 0, bm_shape);
+		xcb_flush( con);
+	}
 	
 	/** clean up **/
 	cairo_destroy( cr);
-	cairo_surface_destroy( cr_osd);
+	cairo_surface_destroy( surf_osd);
 	free_theme( &theme);
 	sem_post( &osd.mapped);
 		

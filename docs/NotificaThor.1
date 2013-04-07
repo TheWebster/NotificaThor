@@ -47,6 +47,7 @@ Write messages to filename instead of syslog.
 .SH CONFIGURATION FILE
 The configuration file is placed in
 .IR $XDG_CONFIG_HOME/NotificaThor/rc.conf .
+NotificaThor monitors its config file and rereads it as soon as it is changed.
 It follows a simple key=value scheme with the following keys:
 
 .TP
@@ -54,6 +55,11 @@ It follows a simple key=value scheme with the following keys:
 Determines wether to use an ARGB-visual for the OSD-window or not.
 Using an ARGB-visual enables true transparency when using an compositing-manager
 like compiz or xcompmgr.
+
+.TP
+.BI use_xshape= bool|'whole'
+When 'whole' is specified, the whole popup will be click-through.
+When 'true' is specified, only fully transparent areas will be click-through.
 
 .TP
 .BI default_theme= theme-name

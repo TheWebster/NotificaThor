@@ -25,6 +25,7 @@ Build dependencies:
 - libcairo
 - librt
 - libpthread
+- libxcb-shape
 
 Simply run 'make install'.
 
