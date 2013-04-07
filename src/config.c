@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <sys/mman.h>
 
 #include "com.h"
 #include "NotificaThor.h"

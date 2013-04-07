@@ -2,9 +2,9 @@ SHELL      = /bin/sh
 CC         = /usr/bin/gcc
 VER        = $(shell cat ../VERSION)
 ifeq ($(DEBUG),1)
-GLOB_FLAGS = -Wall -O0 -g -D 'VERSION="$(VER)"' -D DEBUG
+GLOB_FLAGS = -Wall -Og -g -D 'VERSION="$(VER)"' -D DEBUG
 else
-GLOB_FLAGS = -Wall -Os -D 'VERSION="$(VER)"'
+GLOB_FLAGS = -Wall -O2 -D 'VERSION="$(VER)"'
 endif
 
 .PHONY: all clean

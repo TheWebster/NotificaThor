@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <time.h>
 #include <unistd.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -245,6 +246,7 @@ show_osd( thor_message *msg)
 	thor_theme      theme = {0};
 	uint32_t        cval[4] = {0};
 	cairo_t         *cr = NULL;
+	cairo_surface_t *surf_buf = NULL;
 	cairo_surface_t *surf_osd = NULL;
 	
 	
@@ -278,7 +280,7 @@ show_osd( thor_message *msg)
 	if( (theme.bar.width   == 0 || theme.bar.height   == 0) &&
 	    (theme.image.width == 0 || theme.image.height == 0) )
 	{
-		thor_log( LOG_ERR, "Not elements to be drawn.");
+		thor_log( LOG_ERR, "No elements to be drawn.");
 		return -1;
 	}
 	
@@ -287,7 +289,7 @@ show_osd( thor_message *msg)
 		xcb_map_window( con, osd.win);
 		xcb_flush( con);
 		sem_wait( &osd.mapped);
-	}	
+	}
 	
 	/** get custom geometry **/
 	cval[2] = 0;
@@ -342,20 +344,21 @@ show_osd( thor_message *msg)
 	
 	/** initialize cairo **/
 	surf_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
-	cr = cairo_create( surf_osd);
+	surf_buf = cairo_image_surface_create( CAIRO_FORMAT_ARGB32, cval[2], cval[3]);
+	cr = cairo_create( surf_buf);
 	
-	/** draw background **/
+	/** draw background to buffering surface**/
 	fallback_surface.surf_color   = 0xff000000;
 	fallback_surface.surf_op      = CAIRO_OPERATOR_OVER;
 	draw_surface( cr, &theme.background, CONTROL_NONE, 0, 0, cval[2], cval[3]);
 	
 	
-	/** draw image **/
+	/** draw image to buffering surface**/
 	if( theme.image.width > 0 && theme.image.height > 0 ) {
 		draw_surface( cr, &theme.image.picture, CONTROL_NONE, theme.image.x, theme.image.y, theme.image.width, theme.image.height);
 	}
 	
-	/** draw bar **/
+	/** draw bar draw to buffering surface**/
 	if( theme.bar.width > 0 && theme.bar.height > 0 ) {
 		double fraction = (double)msg->bar_part / msg->bar_elements;
 		int    flags;
@@ -399,6 +402,14 @@ show_osd( thor_message *msg)
 				break;
 		}		
 	}
+	cairo_destroy( cr);
+	
+	/** copy buffering surface to window **/
+	cr = cairo_create( surf_osd);
+	cairo_set_source_surface( cr, surf_buf, 0, 0);
+	cairo_set_operator( cr, CAIRO_OPERATOR_SOURCE);
+	cairo_paint( cr);
+	cairo_destroy( cr);
 	
 	xcb_flush( con);
 	
@@ -406,24 +417,23 @@ show_osd( thor_message *msg)
 	if( has_xshape ) {
 		xcb_pixmap_t    bm_shape   = xcb_generate_id( con);
 		cairo_surface_t *surf_shape;
-		cairo_t         *cr_shape;
 		
 		
 		xcb_create_pixmap( con, 1, bm_shape, osd.win, cval[2], cval[3]);
 		surf_shape = cairo_xcb_surface_create_for_bitmap( con, screen, bm_shape, cval[2], cval[3]);
-		cr_shape   = cairo_create( surf_shape);
+		cr         = cairo_create( surf_shape);
 		
 		/** clear bitmap (completely click-through) **/
-		cairo_set_operator( cr_shape, CAIRO_OPERATOR_CLEAR);
-		cairo_paint( cr_shape);
+		cairo_set_operator( cr, CAIRO_OPERATOR_CLEAR);
+		cairo_paint( cr);
 		
-		/** use windows surface as mask **/
+		/** use buffering surface as mask **/
 		if( _use_xshape != 2 ) {
-			cairo_set_operator( cr_shape, CAIRO_OPERATOR_OVER);
-			cairo_mask_surface( cr_shape, surf_osd, 0, 0);
+			cairo_set_operator( cr, CAIRO_OPERATOR_OVER);
+			cairo_mask_surface( cr, surf_buf, 0, 0);
 		}
 		
-		cairo_destroy( cr_shape);
+		cairo_destroy( cr);
 		cairo_surface_destroy( surf_shape);
 		
 		xcb_shape_mask( con, XCB_SHAPE_SO_SET, XCB_SHAPE_SK_INPUT, osd.win, 0, 0, bm_shape);
@@ -431,11 +441,10 @@ show_osd( thor_message *msg)
 	}
 	
 	/** clean up **/
-	cairo_destroy( cr);
+	cairo_surface_destroy( surf_buf);
 	cairo_surface_destroy( surf_osd);
 	free_theme( &theme);
 	sem_post( &osd.mapped);
-		
 	return 0;
 };
 

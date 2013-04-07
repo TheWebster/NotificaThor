@@ -25,10 +25,13 @@
 #include "logging.h"
 #include "theme_symbols.h"
 
+
 #define MAX_TOK_LEN      FILENAME_MAX + 128
 #define MAX_BLOCK_DEPTH  4
+#define IMAGE_BUF_SIZE   10
 
 
+/** target access macros **/
 #define t_theme			((thor_theme*)target)
 #define t_surface       ((surface_t*)target)
 #define t_layer         ((layer_t*)target)
@@ -36,10 +39,24 @@
 #define t_bar           ((bar_t*)target)
 #define t_image         ((image_t*)target)
 
+/** control variables **/
 static unsigned int     line;
 static unsigned int     block_depth;
 static char             log_msg[128];
 static int              *custom_dim = 0;
+
+/** image ringbuffer **/
+#define IMAGE_BUF_SIZE   10
+
+typedef struct
+{
+	int             used;
+	cairo_surface_t *surface;
+	char            filename[FILENAME_MAX];
+} image_cache_t;
+
+static image_cache_t image_cache[IMAGE_BUF_SIZE] = {{0}};
+static int           next_im_cache = 0;
 
 
 /*
@@ -185,6 +202,60 @@ parse_color( char *ptr, uint32_t *color)
 
 
 /*
+ * Search for the given filename in the image ringbuffer or create a new surface.
+ * 
+ * Parameters: filename - The path to the PNG-file.
+ * 
+ * Returns: cairo_surface_t of the requested image or NULL in case of error.
+ */
+static cairo_surface_t*
+get_surface_for_png( char *filename)
+{
+	int             i;
+	cairo_surface_t *surface;
+	cairo_status_t  status;
+	
+	
+	/** search for surface to be already present **/
+	for( i = 0; i < IMAGE_BUF_SIZE && image_cache[i].used == 1; i++ ) {
+		if( strcmp( image_cache[i].filename, filename) == 0 ) {
+			return image_cache[i].surface;
+		}
+	}
+	
+	/** otherwise create it **/
+	surface = cairo_image_surface_create_from_png( filename);
+	
+	if( (status = cairo_surface_status( surface)) != CAIRO_STATUS_SUCCESS ) {
+	thor_log( LOG_ERR, "%s%d - '%s' %s.", log_msg, line, filename, cairo_status_to_string( status));
+		cairo_surface_destroy( surface);
+		return NULL;
+	}
+	
+	if( image_cache[next_im_cache].used == 1 ) {
+		cairo_surface_destroy( image_cache[next_im_cache].surface);
+	}
+	
+	image_cache[next_im_cache].surface = surface;
+	
+	image_cache[next_im_cache].used = 1;
+	cpycat( image_cache[next_im_cache].filename, filename);
+	
+	/** proceed to next cache **/
+	if( next_im_cache == IMAGE_BUF_SIZE - 1 )
+		next_im_cache = 0;
+	else
+		next_im_cache++;
+	
+	
+	return surface;
+};
+	
+	
+	
+
+
+/*
  * Creates a new layer for a surface.
  * 
  * Parameters: pat_type - The type of the pattern to create.
@@ -223,21 +294,18 @@ create_layer( unsigned char pat_type, surface_t *surface, char *value)
 		pat = cairo_pattern_create_radial( 0.5, 0.5, 0, 0.5, 0.5, 0.5);
 	}
 	else if( pat_type == PATTYPE_PNG ) {
-		cairo_surface_t *surface = cairo_image_surface_create_from_png( value);
 		cairo_matrix_t  scaling;
+		cairo_surface_t *surface = get_surface_for_png( value);
 		
 		
-		if( (status = cairo_surface_status( surface)) != CAIRO_STATUS_SUCCESS ) {
-			thor_log( LOG_ERR, "%s%d - '%s' %s.", log_msg, line, value, cairo_status_to_string( status));
+		if( surface == NULL )
 			return NULL;
-		}
 		
 		cairo_matrix_init_scale( &scaling, cairo_image_surface_get_width( surface),
-		                                   cairo_image_surface_get_height( surface));		
+										   cairo_image_surface_get_height( surface));		
 		
 		pat = cairo_pattern_create_for_surface( surface);
 		cairo_pattern_set_matrix( pat, &scaling);
-		cairo_surface_destroy( surface);
 	}
 	
 	if( (status = cairo_pattern_status( pat)) != CAIRO_STATUS_SUCCESS ) {
