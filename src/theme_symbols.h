@@ -1,11 +1,11 @@
-/* ********************************************** *\
- * theme_symbols.h                                *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Structures for symbol parsing.    *
-\* ********************************************** */
+/* ************************************************************* *\
+ * theme_symbols.h                                               *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Structures for symbol parsing.                   *
+\* ************************************************************* */
  
 
 typedef struct

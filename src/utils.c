@@ -1,11 +1,11 @@
-/* ********************************************** *\
- * utils.c                                        *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Various recurring functions.      *
-\* ********************************************** */
+/* ************************************************************* *\
+ * utils.c                                                       *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Various recurring functions.                     *
+\* ************************************************************* */
 
 
 #include <stdint.h>

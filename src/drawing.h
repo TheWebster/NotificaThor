@@ -1,12 +1,11 @@
-/* ********************************************** *\
- * drawing.h                                      *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Declaration of the draw_surface() *
- *              function.                         *
-\* ********************************************** */
+/* ************************************************************* *\
+ * drawing.h                                                     *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ *                                                               *
+ * Description: Declaration of the draw_surface() function.      *
+\* ************************************************************* */
 
 struct fbs_t
 {

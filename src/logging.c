@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * logging.c                                      *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Functions to setup, close and     *
- *              use logging functions.            *
-\* ********************************************** */
+/* ************************************************************* *\
+ * logging.c                                                     *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Functions to setup, close and                    *
+ *              use logging functions.                           *
+\* ************************************************************* */
 #include <errno.h>
 #include <signal.h>
 #include <stdarg.h>

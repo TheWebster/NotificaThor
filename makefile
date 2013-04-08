@@ -2,7 +2,7 @@ SHELL   = /bin/sh
 INSTDIR = $(prefix)/usr/bin
 MANDIR  = $(prefix)/usr/share/man
 
-.PHONY: clean-all install uninstall
+.PHONY: all clean-all install uninstall
 
 all:
 	make -Csrc

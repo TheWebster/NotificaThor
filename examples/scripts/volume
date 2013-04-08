@@ -1,0 +1,40 @@
+#!/bin/bash
+# This script adjusts the volume and launches popups with NotificaThor.
+# usage:
+#  volume up   - Raise volume by one step.
+#  volume down - Lower volume by one step.
+#  volume mute - Toggle MUTE
+
+
+case $1 in
+	"up")
+		val="1+ on"
+		;;
+	"down")
+		val="1- on"
+		;;
+	"mute")
+		onoff=$(amixer sget Master | sed -n "s/.*\[\(on\|off\)\].*/\1/p")
+		if [ "$onoff" = "on" ]; then
+			amixer sset Master off > /dev/null
+			thor-cli -pvolume_mute -b0/1
+			exit 0
+		else
+			val="on"
+		fi
+		;;
+esac
+
+percent=$(amixer sset Master $val | sed -n "s/.*\[\([0-9]*\)%\].*/\1/p")
+
+if [ $percent -eq 0 ]; then
+	popup="volume_mute"
+elif [ $percent -lt 33 ]; then
+	popup="volume_low"
+elif [ $percent -lt 66 ]; then
+	popup="volume_mid"
+else
+	popup="volume_high"
+fi
+
+thor-cli -p"$popup"  -b"$percent"/100 

@@ -1,13 +1,12 @@
-/* ********************************************** *\
- * com.h                                          *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Function declarations and         *
- *              message struct for communication  *
- *              between daemon and client.        *
-\* ********************************************** */
+/* ************************************************************* *\
+ * com.h                                                         *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ *                                                               *
+ * Description: Function declarations and message struct for     *
+ *              communication between daemon and client.         *
+\* ************************************************************* */
 
 
 #define MSG_ACK  6

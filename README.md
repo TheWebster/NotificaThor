@@ -29,5 +29,8 @@ Build dependencies:
 
 Simply run 'make install'.
 
+Usage
+-----
 
-Example config files are provided in the config directory.
+The example-directory contains an example configuration allowing simple brightness-
+and volume-control.

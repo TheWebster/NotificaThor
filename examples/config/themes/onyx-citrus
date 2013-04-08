@@ -1,3 +1,7 @@
+/*
+ * A simple theme for NotificaThor inspired by "Onyx-Citrus" for Openbox
+ */
+
 pad_to_border_x:  20;
 pad_to_border_y:  20;
 

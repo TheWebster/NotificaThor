@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * thor-cli.c                                     *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Command line client that sends    *
- *              commands to the daemon.           *
-\* ********************************************** */
+/* ************************************************************* *\
+ * thor-cli.c                                                    *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Command line client that sends commands to       *
+ *              the daemon.                                      *
+\* ************************************************************* */
 
 
 #include <errno.h>

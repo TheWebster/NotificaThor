@@ -1,11 +1,11 @@
-/* ********************************************** *\
- * config.c                                       *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Config file parsing.              *
-\* ********************************************** */
+/* ************************************************************* *\
+ * config.c                                                      *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ *                                                               *
+ * Description: Config file parsing.                             *
+\* ************************************************************* */
 
 
 #define _CONFIG_

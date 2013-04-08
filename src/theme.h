@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * theme.h                                        *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Definition of theme struct and    *
- *              declaration of functions.         *
-\* ********************************************** */
+/* ************************************************************* *\
+ * theme.h                                                       *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Definition of theme struct and                   *
+ *              declaration of functions.                        *
+\* ************************************************************* */
 
 
 /** color macros **/

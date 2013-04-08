@@ -1,4 +1,6 @@
 #!/bin/bash
+# This script relies on the actual brightness beeing adjusted somewhere else and
+# only launches the popup.
 
 max_brightness=$(cat /sys/class/backlight/acpi_video0/max_brightness)
 brightness=$(cat /sys/class/backlight/acpi_video0/brightness)

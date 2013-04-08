@@ -1,11 +1,11 @@
-/* ********************************************** *\
- * theme.c                                        *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Theme parsing.                    *
-\* ********************************************** */
+/* ************************************************************* *\
+ * theme.c                                                       *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Theme parsing.                                   *
+\* ************************************************************* */
 
 
 #include <cairo/cairo.h>

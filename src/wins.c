@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * wins.c                                         *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Functions for setting up xcb and  *
- *              the windows.                      *
-\* ********************************************** */
+/* ************************************************************* *\
+ * wins.c                                                        *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Functions for setting up xcb and                 *
+ *              the windows.                                     *
+\* ************************************************************* */
 
 
 #define _GRAPHICAL_

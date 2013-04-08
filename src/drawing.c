@@ -1,11 +1,11 @@
-/* ********************************************** *\
- * drawing.c                                      *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Advanced drawing operations.      *
-\* ********************************************** */
+/* ************************************************************* *\
+ * drawing.c                                                     *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ *                                                               *
+ * Description: Advanced drawing operations.                     *
+\* ************************************************************* */
 
 
 #include <cairo/cairo.h>

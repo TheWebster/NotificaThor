@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * com.c                                          *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Functions for communication       *
- *              between daemon and client.        *
-\* ********************************************** */
+/* ************************************************************* *\
+ * com.c                                                         *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Functions for communication                      *
+ *              between daemon and client.                       *
+\* ************************************************************* */
 
 
 #include <errno.h>

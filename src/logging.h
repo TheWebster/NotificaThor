@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * logging.h                                      *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: Declaration of logging functions  *
- *              and additional macros.            *
-\* ********************************************** */
+/* ************************************************************* *\
+ * logging.h                                                     *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Declaration of logging functions                 *
+ *              and additional macros.                           *
+\* ************************************************************* */
 
 
 #define LOGGER_STDERR    1

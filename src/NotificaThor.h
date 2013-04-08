@@ -1,12 +1,12 @@
-/* ********************************************** *\
- * NotificaThor.h                                 *
- *                                                *
- * Project:     NotificaThor                      *
- * Author:      Christian Weber                   *
- *                                                *
- * Description: String definitions, declaration   *
- *              of functions from 'utils.c'.      *
-\* ********************************************** */
+/* ************************************************************* *\
+ * NotificaThor.h                                                *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ *                                                               *
+ * Description: String definitions, declaration                  *
+ *              of functions from 'utils.c'.                     *
+\* ************************************************************* */
 #ifndef VERSION
 	#error "Define a version!"
 #endif
