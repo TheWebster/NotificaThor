@@ -22,6 +22,10 @@ IMAGE
 {
 	width: 128;
 	height: 128;
+	
+	picture {
+		png{}
+	}
 }
 
 BAR

@@ -21,10 +21,9 @@ typedef struct
 {
 	cairo_operator_t operator;
 	
-	#define BORDER_TYPE_NONE     0
-	#define BORDER_TYPE_SOLID    1
-	#define BORDER_TYPE_TOPLEFT  2
-	#define BORDER_TYPE_TOPRIGHT 3
+	#define BORDER_TYPE_SOLID    0
+	#define BORDER_TYPE_TOPLEFT  1
+	#define BORDER_TYPE_TOPRIGHT 2
 	int type;
 	
 	unsigned int  width;

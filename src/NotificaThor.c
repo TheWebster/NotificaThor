@@ -33,13 +33,11 @@
 
 
 static sig_atomic_t sig_received = 0;
-static char         *config_file;
-static char         *pidfile;
-static char         *socket_path;
+static int          sockfd = 0;
+static char*        socket_path;
 
-int  xerror = 0;
-char *config_path;
-char *themes_path;
+int xerror = 0;
+int inofd = -1;
 
 
 /*
@@ -113,6 +111,27 @@ handle_message( int sockfd, timer_t timer)
 		goto end;
 	}
 	
+#ifdef VERBOSE
+	thor_log( LOG_DEBUG, "Received message over socket:\n"
+	                     "\tTimeout   = %f\n"
+	                     "\tImage     = '%s'\n"
+	                     "\tBar       = %d/%d\n"
+	                     "\tNo-Image  = %d\n"
+	                     "\tNo-Bar    = %d\n"
+	                     "\tQuery PID = %d",
+	          msg.timeout, msg.image, msg.bar_part, msg.bar_elements,
+	          (msg.flags & COM_NO_IMAGE) >> 1,
+	          (msg.flags & COM_NO_BAR) >> 2,
+	          msg.flags & COM_QUERY);
+#endif
+	
+	/** query pid **/
+	if( msg.flags & COM_QUERY ) {
+		pid_t mypid = getpid();
+		write( clsockfd, &mypid, sizeof(pid_t));
+		goto end;
+	}
+	
 	/** initializing the popup **/
 	if( msg.timeout == 0 )
 		msg.timeout = _osd_default_timeout;
@@ -125,114 +144,6 @@ handle_message( int sockfd, timer_t timer)
   end:
 	close( clsockfd);
 	return ret;
-};
-
-
-/*
- * Initialize Inotify watch on config file.
- * 
- * Returns: Filedescriptor for Inotify or -1 on error.
- */
-static int
-init_inotify()
-{
-	int inofd = -1;
-	
-	
-	if( (inofd = inotify_init()) != -1 ) {
-		if( inotify_add_watch( inofd, config_file, IN_CLOSE_WRITE|IN_MODIFY) == -1 ) {
-			thor_errlog( LOG_ERR, "Could not add watch on config file");
-			close( inofd);
-			inofd = -1;
-		}
-	}
-	else
-		thor_errlog( LOG_ERR, "Could not initialize inotify");
-	
-	return inofd;
-};
-
-
-/*
- * Handles Inotify-events on config file.
- * 
- * Parameters: fd       - Pointer to Inotify descriptor.
- *             ino_time - Pointer to the last time of Inotify-event.
- */
-#define IN_EVENT_SIZE    (sizeof(struct inotify_event) + FILENAME_MAX + 1)
-#define IN_BUFF_SIZE     (16*IN_EVENT_SIZE)
-static void
-handle_inotify( int *fd, time_t *ino_time)
-{
-	char buffer[IN_BUFF_SIZE];
-	
-	
-	read( *fd, buffer, IN_BUFF_SIZE);
-	/* check if the last inotify event was at least one second ago,
-	 * because most text editors do strange things instead of simply
-	 * writing text to a file...
-	 */
-	if( *ino_time < time( NULL) ) {
-		thor_log( LOG_DEBUG, "Rereading config file...");
-		sleep(1);
-		parse_conf( config_file);
-		query_extensions();
-		*ino_time = time( NULL);
-	}
-	
-	close( *fd);
-	*fd = init_inotify();
-}
-
-
-/*
- * Checks for running instances of the daemon via PID file.
- * 
- * Returns: 0 if no instance is running, -1 if an instance
- *          is running or an error occurred.
- */
-static int
-check_for_running()
-{
-	pid_t pid;
-	FILE  *fpid;
-	char  string[10];
-	char  *endptr;
-	
-	
-	/** read existing file **/
-	if( (fpid = fopen( pidfile, "r")) == NULL ) {
-		if( errno == ENOENT )
-			goto write_file;
-		else {
-			thor_errlog( LOG_CRIT, "Opening PID file");
-			return -1;
-		}
-	}
-	fgets( string, 9, fpid);
-	fclose( fpid);
-	if( (pid = strtol( string, &endptr, 10)) != 0 ) {
-		if( kill( pid, 0) == 0 ) {
-			thor_log( LOG_CRIT, "An instance of NotificaThor is already running ( PID = %d ).", pid);
-			return -1;
-		}
-	}
-	remove( socket_path);
-	
-  write_file:
-	mkdir( pidfile, 0755);
-	strcat( pidfile, "/"APP_NAME);
-	mkdir( pidfile, 0700);
-	strcat( pidfile, "/PID");
-	
-	if( (fpid = fopen( pidfile, "w")) == NULL ) {
-		thor_errlog( LOG_CRIT, "Writing PID file");
-		return -1;
-	}
-	fprintf( fpid, "%d", getpid());
-	fclose( fpid);
-	
-	return 0;
 };
 
 
@@ -257,7 +168,7 @@ timeout_handler()
 	return;
 };
 
-		
+
 /*
  * Create socket, timer, sighandler and play main loop.
  * 
@@ -266,45 +177,11 @@ timeout_handler()
 static int
 event_loop()
 {
-	int                 sockfd = 0;
-	int                 inofd  = 0;
-	struct sockaddr_un  saddr;
+	int                 ret        = 1;
 	struct sigaction    term_sa    = {{0}};
 	struct sigevent     ev_timeout = {{0}};
 	timer_t             timer;
-	char                *env;
-	time_t              ino_time  = time( NULL);
 	
-		
-	/** generate config paths **/
-	env = getenv( "XDG_CONFIG_HOME");
-	if( !env || !*env ) {
-		env = getenv( "HOME");
-		
-		config_path = (char*)malloc( strlen( env) + sizeof("/.config/"APP_NAME"/") + MAX_THEME_LEN);
-		cpycat( cpycat( config_path, env), "/.config/"APP_NAME"/");
-	}
-	else {
-		config_path = (char*)malloc( strlen( env) + sizeof("/"APP_NAME"/") + MAX_THEME_LEN);
-		cpycat( cpycat( config_path, env), "/"APP_NAME"/");
-	}
-	config_file = (char*)malloc( strlen( config_path) + sizeof("rc.conf"));
-	cpycat( cpycat( config_file, config_path), "rc.conf");
-	
-	themes_path = (char*)malloc( strlen( config_path) + sizeof("themes/") + MAX_THEME_LEN);
-	cpycat( cpycat( themes_path, config_path), "themes/");
-	
-	/** generate cache paths **/
-	env = getenv( "XDG_CACHE_HOME");
-	socket_path = saddr.sun_path;
-	if( !env || !*env ) {
-		env = getenv( "HOME");
-		
-		cpycat( cpycat( socket_path, env), "/.cache");
-	}
-	pidfile = (char*)malloc( strlen( socket_path) + sizeof("/"APP_NAME"/PID"));
-	cpycat( pidfile, socket_path);
-	strcat( socket_path, "/"APP_NAME"/socket");
 	
 	/** install signalhandler **/
 	term_sa.sa_handler = sig_handler;
@@ -312,12 +189,12 @@ event_loop()
 	sigaction( SIGTERM, &term_sa, NULL);
 	sigaction( SIGHUP , &term_sa, NULL);
 	
-	/** check for running instances **/
-	if( check_for_running() == -1 )
-		return -1;
-	
-	/** parse config file **/
-	parse_conf( config_file);
+	if( (inofd = inotify_init()) == -1 )
+		thor_errlog( LOG_ERR, "Initializing Inotify");
+		
+	/** parse config file and theme**/
+	parse_conf();
+	parse_default_theme();
 	
 	/** install timer **/
 	ev_timeout.sigev_notify = SIGEV_THREAD;
@@ -328,21 +205,6 @@ event_loop()
 	if( prepare_x() == -1 )
 		goto err;
 	
-	/** initialize inotify watch on config file **/
-	inofd = init_inotify();
-	
-	/** opening socket **/
-	if( (sockfd = socket( AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
-		thor_errlog( LOG_CRIT, "Creating socket");
-		goto err_x;
-	}
-	
-	saddr.sun_family = AF_UNIX;
-	
-	if( bind( sockfd, (struct sockaddr*)&saddr, sizeof(struct sockaddr_un)) == -1 ) {
-		thor_errlog( LOG_CRIT, "Binding socket");
-		goto err_x;
-	}
 	if( listen( sockfd, 5) == -1 ) {
 		thor_errlog( LOG_CRIT, "Listening on socket");
 		goto err_x;
@@ -353,14 +215,18 @@ event_loop()
 	while( 1 )
 	{
 		fd_set set;
+		int    maxfd = sockfd;
 		
 		
 		FD_ZERO( &set);
 		FD_SET( sockfd, &set);
-		if( inofd != -1 )
+		if( inofd != -1 ) {
 			FD_SET( inofd, &set);
+			use_largest( (uint32_t*)&maxfd, (uint32_t)inofd);
+		}
 		
-		if( select( sockfd + 1, &set, NULL, NULL, NULL) == -1 ) {
+		
+		if( select( maxfd + 1, &set, NULL, NULL, NULL) == -1 ) {
 			if( errno != EINTR )
 				thor_log( LOG_CRIT, "select()");
 			goto err_x;
@@ -371,13 +237,16 @@ event_loop()
 			if( handle_message( sockfd, timer) == -1 )
 				goto err_x;
 		}
-		
-		/** changes in config file **/
-		else if( FD_ISSET( inofd, &set) )
-			handle_inotify( &inofd, &ino_time);
+		/** Inotify event **/
+		else if( FD_ISSET( inofd, &set) ) {
+			thor_log( LOG_DEBUG, "Rereading config file...");
+			sleep(1);
+			close( inofd);
+			inofd = inotify_init();
+			parse_conf();
+			parse_default_theme();
+		}
 	}
-		
-	return 0;
 	
 	/** cleaning up **/
   err_x:
@@ -386,23 +255,21 @@ event_loop()
 	if( sig_received ) {
 		if( xerror )
 			thor_log( LOG_DEBUG, "X11: IO-Error ocurred (most likely X-Server exited).");
-		else
+		else {
 			thor_log( LOG_DEBUG, "Received signal %s.", strsignal( sig_received));
+			ret = 0;
+		}
 	}
 	thor_log( LOG_DEBUG, "Exiting NotificaThor...");
 	close( sockfd);
+	close( inofd);
 	remove( socket_path);
-	remove( pidfile);
-	go_up( pidfile);
-	remove( pidfile);
-	free( config_path);
-	free( config_file);
-	free( themes_path);
-	free( pidfile);
+	go_up( socket_path);
+	remove( socket_path);
 	timer_delete( timer);
 	close_logger();
 	
-	return -1;
+	return ret;
 };
 
 
@@ -413,6 +280,9 @@ event_loop()
 int
 main( int argc, char *argv[])
 {
+	thor_message        query_msg = { COM_QUERY };
+	pid_t               running_pid;
+	struct sockaddr_un  saddr;
 	char opt;
 	char *logfile       = NULL;
 	int  logging_method = 0;
@@ -456,7 +326,56 @@ main( int argc, char *argv[])
 		}
 	}
 	
+	/** opening socket **/
+	if( (sockfd = socket( AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
+		thor_errlog( LOG_CRIT, "Creating socket");
+		return 1;
+	}
+	
+	socket_path = get_xdg_cache();
+	mkdir( socket_path, 0755);
+	strcat( socket_path, "/NotificaThor");
+	mkdir( socket_path, 0700);
+	strcat( socket_path, "/socket");
+	
+	cpycat( saddr.sun_path, socket_path);
+	saddr.sun_family = AF_UNIX;
+	
+  bind_socket:
+	if( bind( sockfd, (struct sockaddr*)&saddr, sizeof(struct sockaddr_un)) == -1 ) {
+		if( errno == EADDRINUSE ) {
+			if( connect( sockfd, (struct sockaddr*)&saddr, sizeof(struct sockaddr_un)) == 0 ) {
+				// socket is active
+				if( write( sockfd, &query_msg, sizeof(thor_message)) == -1 ) {
+					perror( "Sending PID query");
+					return 1;
+				}
+				if( read( sockfd, &running_pid, sizeof(pid_t)) == -1 ) {
+					perror( "Receiving PID");
+					return 1;
+				}
+				fprintf( stderr, "There is already an instance of NotificaThor running (%d).\n", running_pid);
+				return 1;
+			}
+			
+			// socket is stale
+			if( remove( socket_path) == -1 ) {
+				perror( "Removing stale socket");
+				return 1;
+			}
+			goto bind_socket;
+		}
+		else {
+			thor_errlog( LOG_CRIT, "Binding socket");
+			return 1;
+		}
+	}
+	
 	setup_logger( logging_method, logfile);
+	
+#ifndef TESTING
+	chdir( "/");
+#endif
 	
 	/** forking **/
 	if( logging_method & LOGGER_STDERR ) {
@@ -470,7 +389,6 @@ main( int argc, char *argv[])
 				fclose( stdin);
 				fclose( stdout);
 				fclose( stderr);
-				chdir( "/");
 				
 				if( event_loop() == -1 )
 					return 1;

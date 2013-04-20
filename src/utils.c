@@ -9,6 +9,7 @@
 
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -35,15 +36,18 @@ go_up( char *string)
 	while( *string != '/' )
 		string--;
 	string[1] = '\0';
-}
+};
+
 
 char*
 cpycat( char* dst, char* src)
 {
-    while (*src!='\0') *dst++=*src++;
-    *dst='\0';
+    while( *src != '\0' )
+		*dst++ = *src++;
+    *dst = '\0';
+    
     return dst;
-}
+};
 
 
 /*
@@ -79,4 +83,36 @@ _parse_number( char *string, int *number, int allow_neg, char *logmsg, int line)
 	
 	*number = prenumber;
 	return 0;
+};
+
+
+char *
+get_home_config()
+{
+	char        *env = getenv( "XDG_CONFIG_HOME");
+	static char ret[FILENAME_MAX];
+	
+	
+	if( !env || !*env )
+		cpycat( cpycat( ret, getenv( "HOME")), "/.config/NotificaThor");
+	else
+		cpycat( cpycat( ret, env), "/NotificaThor");
+	
+	return ret;
+};
+
+
+char *
+get_xdg_cache()
+{
+	char        *env = getenv( "XDG_CACHE_HOME");
+	static char ret[FILENAME_MAX];
+	
+	
+	if( !env || !*env )
+		cpycat( cpycat( ret, getenv( "HOME")), "/.cache");
+	else
+		cpycat( ret, env);
+	
+	return ret;
 };

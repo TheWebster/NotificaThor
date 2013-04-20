@@ -29,20 +29,24 @@
 #define USAGE \
 	"usage: thor-cli [options]\n\n" \
 	"    -t, --timeout   Timeout for the popup.\n"\
-	"    -p, --popup     The popup to display.\n"\
 	"    -b, --bar       The state of the bar in form of a fraction ( e.g. \"1/2\").\n"\
+	"    -i, --image     Sends filenames of images to NotificaThor.\n"\
+	"        --no-image  Suppresses the image element.\n"\
+	"        --no-bar    Suppresses the bar element.\n"\
 	"    -h, --help      No clue.\n"\
 	"    -V, --version   Print version info.\n"
 	
-static const char          optstring[] = "hVt:p:b:";
+static const char          optstring[] = "hVt:b:i:";
 static const struct option long_opts[] =
 {
-	{ "timeout", required_argument, NULL, 't'},
-	{ "popup"  , required_argument, NULL, 'p'},
-	{ "bar"    , required_argument, NULL, 'b'},
-	{ "help"   , no_argument      , NULL, 'h'},
-	{ "version", no_argument      , NULL, 'V'},
-	{ NULL     , 0                , NULL,  0 }
+	{ "timeout" , required_argument, NULL, 't'},
+	{ "image"   , required_argument, NULL, 'i'},
+	{ "bar"     , required_argument, NULL, 'b'},
+	{ "no-image", no_argument      , NULL, '0'},
+	{ "no-bar"  , no_argument      , NULL, '1'},
+	{ "help"    , no_argument      , NULL, 'h'},
+	{ "version" , no_argument      , NULL, 'V'},
+	{ NULL      , 0                , NULL,  0 }
 };
 
 
@@ -80,15 +84,14 @@ main( int argc, char *argv[])
 	char               opt;
 	int                sockfd;
 	struct sockaddr_un saddr;
-	thor_message       msg;
+	thor_message       msg = {0};
 	char               *env;
+	ssize_t            image_len_tmp = 0;
 	
-	
-	memset( &msg, 0, sizeof(thor_message));
 	
 	while( (opt = getopt_long( argc, argv, optstring, long_opts, NULL)) != -1 )
 	{
-		char *endptr;
+		char    *endptr;
 		
 		switch( opt )
 		{
@@ -108,9 +111,11 @@ main( int argc, char *argv[])
 				}
 				break;
 			
-			case 'p':
-				msg.popup_len = strlen( optarg) + 1;
-				msg.popup     = optarg;
+			case 'i':
+				msg.image_len += strlen( optarg) + 1;
+				msg.image      = (char*)realloc( msg.image, msg.image_len);
+				cpycat( msg.image + image_len_tmp, optarg);
+				image_len_tmp  = msg.image_len;
 				break;
 			
 			case 'b':
@@ -119,8 +124,20 @@ main( int argc, char *argv[])
 					return -1;
 				}
 				break;
+			
+			case '0': // --no-image
+				msg.flags |= COM_NO_IMAGE;
+				break;
+			
+			case '1': // --no-bar
+				msg.flags |= COM_NO_BAR;
+				
 		}
 	}
+	
+	msg.image_len++;
+	msg.image = (char*)realloc( msg.image, msg.image_len);
+	msg.image[msg.image_len] = '\0';
 	
 	if( (sockfd = socket( AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
 		perror( "Creating socket");
@@ -148,10 +165,10 @@ main( int argc, char *argv[])
 		return 1;
 	}
 	
-	if( msg.popup_len > 0 ) {
+	if( msg.image_len > 0 /* || other_len > 0 */ ) {
 		char    ack = 0;
 		char    *buffer;
-		ssize_t len = msg.popup_len;
+		ssize_t len = msg.image_len /* + other_len */;
 		
 		
 		if( read( sockfd, &ack, 1) == -1 ) {
@@ -159,15 +176,22 @@ main( int argc, char *argv[])
 			return 1;
 		}
 		
+		if( ack != MSG_ACK ) {
+			fprintf( stderr, "Protocoll error: Did not receive ACK (0x%x instead) .\n", ack);
+			return 1;
+		}
+		
 		buffer = (char*)malloc( len);
-		strcpy( buffer, msg.popup);
-		// strcpy( buffer + msg.popup_len, other_string);
+		memcpy( buffer, msg.image, msg.image_len);
+		// memcpy( buffer + msg.image_len, other, other_len);
 		
 		if( write( sockfd, buffer, len) == -1 ) {
 			perror( "Sending string");
 			return 1;
 		}
 		
+		if( msg.image_len > 0 )
+			free( msg.image);
 		free( buffer);
 	}
 	

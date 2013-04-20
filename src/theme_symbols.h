@@ -31,7 +31,6 @@ theme_symbol_t operators[] =
 
 theme_symbol_t border_types[] =
 {
-	{ "none"    , BORDER_TYPE_NONE     },
 	{ "solid"   , BORDER_TYPE_SOLID    },
 	{ "topleft" , BORDER_TYPE_TOPLEFT  },
 	{ "topright", BORDER_TYPE_TOPRIGHT },

@@ -160,6 +160,8 @@ Adds a png to the surface. The filename is specified directly after the
 .BR png .
 If the filename contains whitespaces, it should be enclosed with double-quotes.
 .RB Example: " png \(dq/path/to my/picture.png\(dq { }" .
+If no filename is specified, the filename has to be supplied through the
+.BR --image " option of " thor-cli(1) .
 .TP
 .BI operator: " symbol" ;
 .RB "Specifies the drawing operator. See " OPERATORS .
@@ -177,10 +179,10 @@ be positioned reasonably, but as soon as any
 .BI width: " number" ;
 .TP
 .BI height: " number" ;
-The dimensions of the image in pixels. If one of them is set to 0, the image will
-not be displayed at all.
+The dimensions of the image in pixels. If one of them is set to 0, it will be set to a standard
+value of 128.
 .TP
-.BI Surface picture{}
+.BI "Surface " picture{}
 The actual surface.
 
 .SS BAR{}
@@ -196,8 +198,8 @@ be positioned reasonably, but as soon as any
 .BI width: " number" ;
 .TP
 .BI height: " number" ;
-The dimensions of the image in pixels. If one of them is set to 0, the image will
-not be displayed at all.
+The dimensions of the image in pixels. If one of them is set to 0, it will be set to 200 (width)
+respectively 20 (height).
 .TP
 .BI fill: " symbol" ;
 Specifies how the full part of the bar is filled with the surface. If set to 
@@ -208,10 +210,10 @@ Specifies how the full part of the bar is filled with the surface. If set to
 Specifies where the bar starts and in which direction it is filled. Can be set to
 .BR left-right ", " right-left ", " top-bottom ", " bottom-top .
 .TP
-.BI Surface empty{}
+.BI "Surface " empty{}
 The surface of the empty part.
 .TP
-.BI Surface ful{}
+.BI "Surface " full{}
 The surface of the filled part.
 
 
@@ -275,9 +277,11 @@ Darkens the background by a factor depending on the foreground color.
 
 
 .SH COMMENTS
-Comments can be written in C/C++-Style.
-'//' introduces a comment for one line.
-'/*' starts a multi line comment that is ended by '*/'.
+Comments can be written in C/C++-style.
+.br
+// introduces a comment for the remaining line.
+.br
+/* starts a multi line comment that is ended by */.
 
 
 

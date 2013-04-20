@@ -12,6 +12,8 @@
 #include <cairo/cairo-xcb.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
 
 #include "config.h"
 #include "theme.h"
@@ -19,9 +21,11 @@
 #include "drawing.h"
 #include "NotificaThor.h"
 #include "logging.h"
+#include "images.h"
 
 
 struct fbs_t fallback_surface;
+char         *image_string;
 
 /*
  * Draws a rectangle with rounded corners.
@@ -137,23 +141,25 @@ gradient_corner( cairo_pattern_t *pattern, double x0, double y0, int dirx, int d
 /*
  * Creates a cairo pattern for drawing a split border.
  * 
- * Parameters: pattern        - Mesh pattern to use.
+ * Parameters: surface        - Surface around which a border should be drawn.
  *             x0, y0, x1, y1 - Coordinates of the pattern.
  *             color_t        - Color of top border.
  *             color_r        - Color of right border.
  *             color_b        - Color of bottom border.
  *             color_l        - Color of left border.
- *             surface        - Surface around which a border should be drawn.
+ * 
+ * Returns: The the pattern containing the bordermap.
  */
-static void
-bordermap( cairo_pattern_t *pattern, double x0, double y0, double x1, double y1,
-           uint32_t color_t, uint32_t color_r, uint32_t color_b, uint32_t color_l,
-           surface_t *surface)
+static cairo_pattern_t *
+bordermap( surface_t *surface, double x0, double y0, double x1, double y1,
+           uint32_t color_t, uint32_t color_r, uint32_t color_b, uint32_t color_l)
 {
 	double in_x0 = x0 + surface->border.width;
 	double in_x1 = x1 - surface->border.width;
 	double in_y0 = y0 + surface->border.width;
 	double in_y1 = y1 - surface->border.width;
+	
+	cairo_pattern_t *pattern = cairo_pattern_create_mesh();
 	
 	
 	// top mesh
@@ -177,6 +183,8 @@ bordermap( cairo_pattern_t *pattern, double x0, double y0, double x1, double y1,
 	// bottom-left corner
 	gradient_corner( pattern, x0, y1, surface->rad_bl,  -surface->rad_bl, surface->border.width,
 	                 color_b, color_l);
+	
+	return pattern;
 };
 
 
@@ -199,16 +207,34 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 	cairo_rounded_rectangle( cr, x, y, width, height, surface->rad_tl, surface->rad_tr,
 	                         surface->rad_br, surface->rad_bl);
 	
-	if( control & CONTROL_USE_CLIP )
+	if( control & CONTROL_USE_MATRIX )
 		cairo_restore( cr);
-	if( !(control & CONTROL_USE_MATRIX) ) {
+	else {
 		cairo_translate( cr, x, y);
 		cairo_scale( cr, width, height);
 	}
 	
 	if( surface->nlayers ) {
 		for( i = 0; i < surface->nlayers; i++ ) {
-			cairo_set_source( cr, surface->layer[i].pattern);
+			cairo_pattern_t *pat;
+			cairo_status_t  status;
+			
+			if( surface->layer[i].pattern == NULL ) {
+				if( !image_string || !*image_string )
+					continue;
+				
+				pat    = get_pattern_for_png( image_string);
+				if( (status = cairo_pattern_status( pat)) != CAIRO_STATUS_SUCCESS ) {
+					thor_log( LOG_ERR, "Reading '%s': %s.", image_string, cairo_status_to_string( status));
+					continue;
+				}
+				
+				image_string += strlen( image_string) + 1;
+			}
+			else
+				pat = surface->layer[i].pattern;
+			
+			cairo_set_source( cr, pat);
 			cairo_set_operator( cr, surface->layer[i].operator);
 			cairo_fill_preserve( cr);
 		}
@@ -220,62 +246,65 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 	}
 	
 	cairo_clip( cr);
-	
-	if( control & CONTROL_PRESERVE_MATRIX )
+	if( control & CONTROL_SAVE_MATRIX )
 		cairo_save( cr);
-	
 	cairo_identity_matrix( cr);
-	
-	if( control & CONTROL_PRESERVE_CLIP )
-		cairo_save( cr);
-	
-	if( surface->border.type != BORDER_TYPE_NONE ) {
-		cairo_pattern_t *bmap;
-		double          snap  = (double)surface->border.width / 2;
+};
+
+
+void
+draw_border( cairo_t *cr, surface_t *surface, int outer,
+             double x, double y, double width, double height)
+{
+	if( surface->border.width > 0 ) {
+		cairo_pattern_t *bmap = NULL;
+		double          snap = (double)surface->border.width / 2;
 		
 		
-		if( control & CONTROL_OUTER_BORDER ) {
+		if( outer ) {
 			x      -= surface->border.width;
 			y      -= surface->border.width;
-			width  += 2*surface->border.width;
-			height += 2*surface->border.width;
+			width  += 2 * surface->border.width;
+			height += 2 * surface->border.width;
 			
 			cairo_rounded_rectangle( cr, x, y, width, height, surface->rad_tl, surface->rad_tr,
-	                                 surface->rad_br, surface->rad_bl);
-	        cairo_reset_clip( cr);
-	        cairo_clip( cr);
+									 surface->rad_br, surface->rad_bl);
+			cairo_reset_clip( cr);
+			cairo_clip( cr);
 		}
 		
 		cairo_translate( cr, x, y);
 		cairo_rounded_rectangle( cr, snap, snap,
-		                         width - surface->border.width, height - surface->border.width,
-		                         surface->rad_tl - snap, surface->rad_tr - snap,
-		                         surface->rad_br - snap, surface->rad_bl - snap);
+									 width - surface->border.width, height - surface->border.width,
+									 surface->rad_tl - snap, surface->rad_tr - snap,
+									 surface->rad_br - snap, surface->rad_bl - snap);
 		
-		if( surface->border.type == BORDER_TYPE_SOLID )
-			bmap = cairo_pattern_create_rgba( cairo_rgba( surface->border.color));
-		else {
-			bmap = cairo_pattern_create_mesh();
+		switch( surface->border.type ) {
+			case BORDER_TYPE_SOLID:
+				bmap = cairo_pattern_create_rgba( cairo_rgba( surface->border.color));
+				break;
 			
-			if( surface->border.type == BORDER_TYPE_TOPLEFT )
-				bordermap( bmap, 0, 0, width, height, surface->border.topcolor, surface->border.color,
-				           surface->border.color, surface->border.topcolor, surface);
-			else
-				bordermap( bmap, 0, 0, width, height, surface->border.topcolor, surface->border.topcolor,
-				           surface->border.color, surface->border.color, surface);
-				
+			case BORDER_TYPE_TOPLEFT:
+				bmap = bordermap( surface, -0.5, 0, width, height, surface->border.topcolor, surface->border.color,
+								  surface->border.color, surface->border.topcolor);
+				break;
+			
+			case BORDER_TYPE_TOPRIGHT:
+				bmap = bordermap( surface, 0, 0, width, height, surface->border.topcolor, surface->border.topcolor,
+								  surface->border.color, surface->border.color);
+				break;
 		}
 		
 		cairo_set_line_width( cr, surface->border.width);
 		cairo_set_operator( cr, surface->border.operator);
 		cairo_set_source( cr, bmap);
 		cairo_stroke( cr);
+		
 		cairo_pattern_destroy( bmap);
+		cairo_identity_matrix( cr);
 	}
 	
 	cairo_reset_clip( cr);
-	cairo_identity_matrix( cr);
 };
-	
 	
 	

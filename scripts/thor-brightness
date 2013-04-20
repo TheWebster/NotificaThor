@@ -5,4 +5,4 @@
 max_brightness=$(cat /sys/class/backlight/acpi_video0/max_brightness)
 brightness=$(cat /sys/class/backlight/acpi_video0/brightness)
 
-thor-cli -p bright -b"$brightness/$max_brightness"
+thor-cli -b"$brightness/$max_brightness" -i"/usr/share/icons/gnome/256x256/status/dialog-information.png"

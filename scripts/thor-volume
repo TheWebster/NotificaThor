@@ -17,7 +17,7 @@ case $1 in
 		onoff=$(amixer sget Master | sed -n "s/.*\[\(on\|off\)\].*/\1/p")
 		if [ "$onoff" = "on" ]; then
 			amixer sset Master off > /dev/null
-			thor-cli -pvolume_mute -b0/1
+			thor-cli -b0/1 -i"/usr/share/icons/gnome/256x256/status/audio-volume-muted.png"
 			exit 0
 		else
 			val="on"
@@ -28,13 +28,13 @@ esac
 percent=$(amixer sset Master $val | sed -n "s/.*\[\([0-9]*\)%\].*/\1/p")
 
 if [ $percent -eq 0 ]; then
-	popup="volume_mute"
+	image="/usr/share/icons/gnome/256x256/status/audio-volume-muted.png"
 elif [ $percent -lt 33 ]; then
-	popup="volume_low"
+	image="/usr/share/icons/gnome/256x256/status/audio-volume-low.png"
 elif [ $percent -lt 66 ]; then
-	popup="volume_mid"
+	image="/usr/share/icons/gnome/256x256/status/audio-volume-medium.png"
 else
-	popup="volume_high"
+	image="/usr/share/icons/gnome/256x256/status/audio-volume-high.png"
 fi
 
-thor-cli -p"$popup"  -b"$percent"/100 
+thor-cli -i"$image"  -b"$percent"/100 

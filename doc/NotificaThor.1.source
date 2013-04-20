@@ -2,7 +2,7 @@
 
 
 .SH NAME
-NotificaThor - Highly configurable on screen displays for X.
+NotificaThor - Themeable on screen displays for X.
 
 
 
@@ -45,8 +45,12 @@ Write messages to filename instead of syslog.
 
 
 .SH CONFIGURATION FILE
-The configuration file is placed in
-.IR $XDG_CONFIG_HOME/NotificaThor/rc.conf .
+NotificaThor first searches for
+.IR $XDG_CONFIG_HOME/NotificaThor/rc.conf " ( or " ~/.config/NotificaThor/rc.conf
+if $XDG_CONFIG_HOME is not set ).
+If this file doesn't exist NotificaThor searches for
+.IR /etc/NotificaThor/rc.conf .
+.br
 NotificaThor monitors its config file and rereads it as soon as it is changed.
 It follows a simple key=value scheme with the following keys:
 
@@ -82,24 +86,16 @@ Default timeout in seconds after which the window disapears.
 
 
 .SH THEME FILES
-Theme files reside in the
-.IR $XDG_CONFIG_HOME/NotificaThor/themes/ "-directory."
-However, one can put files into
-.IR $XDG_CONFIG_HOME/NotificaThor/ ,
-which contain additional settings, such as different images.
-.br
-These files can be called by the
-.IR --popup "-option of"
-.BR thor-cli (1).
-.br
-.RB "For further details on theming read " NotificaThor-themes (5).
+If a name for a theme file is given, NotificaThor first searches for an equally named file in
+.IR $XDG_CONFIG_HOME/NotificaThor/themes/ " ( or " ~/.config/NotificaThor/themes/
+if $XDG_CONFIG_HOME is not set ).
+If there is no such file, it is searched in
+.IR /etc/NotificaThor/themes/ .
+.RB "For further details on themefiles read " NotificaThor-themes (5).
 
 
 
 .SH OTHER FILES
-.TP
-.I $XDG_CACHE_HOME/NotificaThor/PID
-Contains process ID of currently running daemon.
 
 .TP
 .I $XDG_CACHE_HOME/NotificaThor/socket
@@ -118,7 +114,7 @@ When no theme is specified, there will be an empty window.
 Christian Weber
 
 .SH VERSION
-0.1.1
+%%VERSION%%
 
 .SH SEE ALSO
 thor-cli(1), NotificaThor-themes(5)

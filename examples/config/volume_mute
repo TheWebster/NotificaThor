@@ -1,6 +1,0 @@
-IMAGE {
-	picture {
-		// replace with your icon of choice
-		png "/usr/share/icons/gnome/256x256/status/audio-volume-muted.png" {}
-	}
-}

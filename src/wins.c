@@ -32,6 +32,7 @@
 #include "drawing.h"
 #include "NotificaThor.h"
 #include "logging.h"
+#include "images.h"
 
 
 typedef struct
@@ -48,10 +49,10 @@ static thor_window_t    osd;
 static pthread_t        xevents;
 static int              has_xshape = 0;
 
+static thor_theme       theme;
+
 /** config from NotificaThor.c **/
 extern int  xerror;
-extern char *config_path;
-extern char *themes_path;
 
 
 /*
@@ -135,8 +136,7 @@ prepare_x()
 	
 	/** get screen **/
 	scr_iter = xcb_setup_roots_iterator( xcb_get_setup( con));
-	while( scr_iter.rem && scr_nbr )
-	{
+	while( scr_iter.rem && scr_nbr ){
 		scr_nbr--;
 		xcb_screen_next( &scr_iter);
 	}
@@ -162,11 +162,7 @@ prepare_x()
 		}
 		else {
 			vt_iter = xcb_depth_visuals_iterator( depth_iter.data);
-			while( vt_iter.rem &&
-				   vt_iter.data->_class != XCB_VISUAL_CLASS_TRUE_COLOR &&
-				   vt_iter.data->red_mask != 0xff0000 &&
-				   vt_iter.data->green_mask != 0xff00 &&
-				   vt_iter.data->blue_mask != 0xff )
+			while( vt_iter.rem && vt_iter.data->_class != XCB_VISUAL_CLASS_TRUE_COLOR )
 				xcb_visualtype_next( &vt_iter);
 			
 			if( vt_iter.rem == 0 ) {
@@ -213,9 +209,10 @@ prepare_x()
 		cw_value[0] = 1;
 		cw_value[1] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		xcb_create_window( con, XCB_COPY_FROM_PARENT, osd.win, screen->root,
-		                   0, 0, 500, 500, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+		                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
 		                   visual->visual_id, CW_MASK_RGB, cw_value);
 	}
+	
 	/** init "mapped" semaphore **/
 	sem_init( &osd.mapped, 0, 0);
 	
@@ -229,7 +226,26 @@ prepare_x()
 	                     XCB_ATOM_ATOM, 32, 1, &note_reply->atom);
 	free( wmtype_reply);
 	free( note_reply);
+	
 	return 0;
+};
+
+
+void
+parse_default_theme()
+{
+	free_theme( &theme);
+	
+	/** set default theme **/
+	theme.background.border.operator    = CAIRO_OPERATOR_OVER;
+	theme.image.picture.border.operator = CAIRO_OPERATOR_OVER;
+	theme.bar.empty.border.operator     = CAIRO_OPERATOR_OVER;
+	theme.bar.full.border.operator      = CAIRO_OPERATOR_OVER;
+	
+	/** parse global theme **/
+	if( *_default_theme != '\0') {
+		parse_theme( _default_theme, &theme);
+	}
 };
 
 
@@ -243,46 +259,20 @@ prepare_x()
 int
 show_osd( thor_message *msg)
 {
-	thor_theme      theme = {0};
-	uint32_t        cval[4] = {0};
-	cairo_t         *cr = NULL;
+	uint32_t        cval[4]   = {0};
+	cairo_t         *cr       = NULL;
 	cairo_surface_t *surf_buf = NULL;
 	cairo_surface_t *surf_osd = NULL;
 	
 	
-	/** set default theme **/
-	theme.background.border.operator    = CAIRO_OPERATOR_OVER;
-	theme.image.picture.border.operator = CAIRO_OPERATOR_OVER;
-	theme.bar.empty.border.operator     = CAIRO_OPERATOR_OVER;
-	theme.bar.full.border.operator      = CAIRO_OPERATOR_OVER;
-	
-	/** parse global theme **/
-	if( *_default_theme != 0 ) {
-		strcat( themes_path, _default_theme);
-		parse_theme( themes_path, &theme);
-		go_up( themes_path);
-	}
-	
-	/** parse popup from message **/
-	if( msg->popup_len != 0 ) {
-		strcat( config_path, msg->popup); 
-		parse_theme( config_path, &theme);
-		go_up( config_path);
-	}
-	
-	/** fallback bar-width and -height **/
-	if( msg->bar_part > 0 && (theme.bar.width == 0 || theme.bar.height == 0) ) {
-		theme.bar.width  = 200;
-		theme.bar.height = 15;
-	}
-	
 	/** stop here if there is nothing to be done **/
-	if( (theme.bar.width   == 0 || theme.bar.height   == 0) &&
-	    (theme.image.width == 0 || theme.image.height == 0) )
-	{
-		thor_log( LOG_ERR, "No elements to be drawn.");
+	if( (msg->flags & (COM_NO_IMAGE|COM_NO_BAR)) == (COM_NO_IMAGE|COM_NO_BAR) ) {
+		thor_log( LOG_DEBUG, "No elements to be drawn.");
 		return -1;
 	}
+		
+	if( msg->image_len > 0 )
+		image_string = msg->image;
 	
 	/** wait for window to be mapped **/
 	if( sem_trywait( &osd.mapped) == -1 ) {
@@ -295,11 +285,11 @@ show_osd( thor_message *msg)
 	cval[2] = 0;
 	cval[3] = theme.padtoborder_y;
 	if( theme.custom_dimensions ) {
-		if( theme.image.width > 0 && theme.image.height > 0 ) {
+		if( !(msg->flags & COM_NO_IMAGE) ) {
 			cval[2] = theme.image.x + theme.image.width;
 			cval[3] = theme.image.y + theme.image.height;
 		}
-		if( theme.bar.width > 0 && theme.bar.height > 0 ) {
+		if( !(msg->flags & COM_NO_BAR) ) {
 			use_largest( &cval[2], theme.bar.x + theme.bar.width);
 			use_largest( &cval[3], theme.bar.y + theme.bar.height);
 		}
@@ -307,12 +297,12 @@ show_osd( thor_message *msg)
 	/** get default geometry **/
 	else {
 		// dimensions
-		if( theme.image.width > 0 && theme.image.height > 0 ) {
+		if( !(msg->flags & COM_NO_IMAGE) ) {
 			theme.image.y = cval[3];
-			cval[2] = theme.image.width;
+			cval[2]  = theme.image.width;
 			cval[3] += theme.image.height;
 		}
-		if( theme.bar.width > 0 && theme.bar.height > 0 ) {
+		if( !(msg->flags & COM_NO_BAR) ) {
 			if( cval[3] > theme.padtoborder_y )
 				cval[3] += 20;
 			
@@ -325,7 +315,7 @@ show_osd( thor_message *msg)
 		
 		// positions
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
-		theme.bar.x = (cval[2] / 2) - (theme.bar.width / 2);
+		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
 	}
 	
 	/** set osd position **/
@@ -339,68 +329,75 @@ show_osd( thor_message *msg)
 	else
 		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + _osd_default_y.coord; // y
 	
+	
 	/** configure window x, y, width, height**/
 	xcb_configure_window( con, osd.win, 15, cval);
-	
 	/** initialize cairo **/
 	surf_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
 	surf_buf = cairo_image_surface_create( CAIRO_FORMAT_ARGB32, cval[2], cval[3]);
-	cr = cairo_create( surf_buf);
+	cr       = cairo_create( surf_buf);
 	
 	/** draw background to buffering surface**/
 	fallback_surface.surf_color   = 0xff000000;
 	fallback_surface.surf_op      = CAIRO_OPERATOR_OVER;
-	draw_surface( cr, &theme.background, CONTROL_NONE, 0, 0, cval[2], cval[3]);
+	draw_surface( cr, &theme.background, 0, 0, 0, cval[2], cval[3]);
+	draw_border( cr, &theme.background, 0, 0, 0, cval[2], cval[3]);
 	
 	
 	/** draw image to buffering surface**/
-	if( theme.image.width > 0 && theme.image.height > 0 ) {
-		draw_surface( cr, &theme.image.picture, CONTROL_NONE, theme.image.x, theme.image.y, theme.image.width, theme.image.height);
+	if( !(msg->flags & COM_NO_IMAGE) ) {
+		fallback_surface.surf_color = 0;
+		fallback_surface.surf_op    = CAIRO_OPERATOR_OVER;
+		draw_surface( cr, &theme.image.picture, 0, theme.image.x, theme.image.y,
+		              theme.image.width, theme.image.height);
+		draw_border( cr, &theme.image.picture, 0, theme.image.x, theme.image.y,
+		             theme.image.width, theme.image.height);
 	}
-	
 	/** draw bar draw to buffering surface**/
-	if( theme.bar.width > 0 && theme.bar.height > 0 ) {
-		double fraction = (double)msg->bar_part / msg->bar_elements;
+	if( !(msg->flags & COM_NO_BAR) ) {
+		double x      = theme.bar.x;
+		double y      = theme.bar.y;
+		double width  = theme.bar.width;
+		double height = theme.bar.height;
 		int    flags;
+		double fraction = (double)msg->bar_part / msg->bar_elements;
 		
+		
+		if( fraction > 1 )	
+			fraction = 1;
 		
 		if( theme.bar.fill_rule == FILL_EMPTY_RELATIVE )
-			flags = CONTROL_PRESERVE_MATRIX|CONTROL_USE_MATRIX;
+			flags = CONTROL_SAVE_MATRIX|CONTROL_USE_MATRIX;
 		else
-			flags = CONTROL_PRESERVE_CLIP|CONTROL_USE_CLIP;
-			
+			flags = CONTROL_NONE;
+		
 		fallback_surface.surf_color = 0;
-		draw_surface( cr, &theme.bar.empty, CONTROL_OUTER_BORDER|(flags & CONTROL_PRESERVE),
+		draw_surface( cr, &theme.bar.empty, flags & CONTROL_SAVE_MATRIX,
 		              theme.bar.x, theme.bar.y, theme.bar.width, theme.bar.height);
 		
 		fallback_surface.surf_color = 0xffffffff;
 		fallback_surface.surf_op    = CAIRO_OPERATOR_DIFFERENCE;
 		switch( theme.bar.orientation ) {
+			case ORIENT_RIGHTLEFT:
+				x += (1 - fraction) * theme.bar.width;
+			
 			case ORIENT_LEFTRIGHT:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
-				              theme.bar.x, theme.bar.y, theme.bar.width * fraction,
-				              theme.bar.height);
+				width = fraction * theme.bar.width;
 				break;
 			
-			case ORIENT_RIGHTLEFT:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
-				              theme.bar.x + theme.bar.width * (1 - fraction),
-				              theme.bar.y, theme.bar.width * fraction,
-				              theme.bar.height);
-				break;
+			case ORIENT_BOTTOMTOP:
+				y += (1 - fraction) * theme.bar.height;
 			
 			case ORIENT_TOPBOTTOM:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
-				              theme.bar.x, theme.bar.y, theme.bar.width,
-				              theme.bar.height * fraction);
+				height = fraction * theme.bar.height;
 				break;
-				
-			case ORIENT_BOTTOMTOP:
-				draw_surface( cr, &theme.bar.full, flags & CONTROL_USE,
-				              theme.bar.x, theme.bar.y + theme.bar.height * (1 - fraction),
-				              theme.bar.width, theme.bar.height * fraction);
-				break;
-		}		
+		}
+		draw_surface( cr, &theme.bar.full, flags & CONTROL_USE_MATRIX, x, y, width, height);
+		draw_border( cr, &theme.bar.full, 0, x, y, width, height);
+		
+		draw_border( cr, &theme.bar.empty, 1, theme.bar.x, theme.bar.y,
+		             theme.bar.width, theme.bar.height);
+		
 	}
 	cairo_destroy( cr);
 	
@@ -443,8 +440,8 @@ show_osd( thor_message *msg)
 	/** clean up **/
 	cairo_surface_destroy( surf_buf);
 	cairo_surface_destroy( surf_osd);
-	free_theme( &theme);
 	sem_post( &osd.mapped);
+	
 	return 0;
 };
 
@@ -458,6 +455,7 @@ cleanup_x()
 	xcb_destroy_window( con, osd.win);
 	sem_destroy( &osd.mapped);
 	pthread_cancel( xevents);
+	free_image_cache();
 	xcb_flush( con);
 	xcb_disconnect( con);
 	

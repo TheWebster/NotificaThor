@@ -8,7 +8,7 @@
 \* ************************************************************* */
 
 
-int parse_conf( char *config_file);
+int parse_conf();
 
 /** config variables **/
 typedef struct

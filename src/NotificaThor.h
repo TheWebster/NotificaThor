@@ -11,6 +11,16 @@
 	#error "Define a version!"
 #endif
 
+
+#ifndef TESTING
+	#define DEFAULT_CONFIG "/etc/NotificaThor/rc.conf"
+	#define DEFAULT_THEMES "/etc/NotificaThor/themes/"
+#else
+	#define DEFAULT_CONFIG "etc/NotificaThor/rc.conf"
+	#define DEFAULT_THEMES "etc/NotificaThor/themes/"
+#endif
+
+
 #define APP_NAME "NotificaThor"
 #define VERSION_STRING  "NotificaThor "VERSION"\n"
 #define USAGE\
@@ -30,3 +40,5 @@ char* cpycat(char* dst,char* src);
 int _parse_number( char *string, int *number, int allow_neg, char *logmsg, int line);
 #define parse_number( string, nptr, allow_neg)   _parse_number( string, nptr, allow_neg, log_msg, line)
 #define _realloc( ptr, type, elements)           ptr = (type*)realloc( ptr, elements*sizeof(type))
+char *get_home_config();
+char *get_xdg_cache();

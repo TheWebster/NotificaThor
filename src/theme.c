@@ -18,17 +18,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <sys/inotify.h>
 
 #include "com.h"
 #include "theme.h"
 #include "NotificaThor.h"
 #include "logging.h"
 #include "theme_symbols.h"
+#include "images.h"
 
 
 #define MAX_TOK_LEN      FILENAME_MAX + 128
 #define MAX_BLOCK_DEPTH  4
-#define IMAGE_BUF_SIZE   10
 
 
 /** target access macros **/
@@ -45,18 +46,7 @@ static unsigned int     block_depth;
 static char             log_msg[128];
 static int              *custom_dim = 0;
 
-/** image ringbuffer **/
-#define IMAGE_BUF_SIZE   10
-
-typedef struct
-{
-	int             used;
-	cairo_surface_t *surface;
-	char            filename[FILENAME_MAX];
-} image_cache_t;
-
-static image_cache_t image_cache[IMAGE_BUF_SIZE] = {{0}};
-static int           next_im_cache = 0;
+extern int inofd;
 
 
 /*
@@ -202,60 +192,6 @@ parse_color( char *ptr, uint32_t *color)
 
 
 /*
- * Search for the given filename in the image ringbuffer or create a new surface.
- * 
- * Parameters: filename - The path to the PNG-file.
- * 
- * Returns: cairo_surface_t of the requested image or NULL in case of error.
- */
-static cairo_surface_t*
-get_surface_for_png( char *filename)
-{
-	int             i;
-	cairo_surface_t *surface;
-	cairo_status_t  status;
-	
-	
-	/** search for surface to be already present **/
-	for( i = 0; i < IMAGE_BUF_SIZE && image_cache[i].used == 1; i++ ) {
-		if( strcmp( image_cache[i].filename, filename) == 0 ) {
-			return image_cache[i].surface;
-		}
-	}
-	
-	/** otherwise create it **/
-	surface = cairo_image_surface_create_from_png( filename);
-	
-	if( (status = cairo_surface_status( surface)) != CAIRO_STATUS_SUCCESS ) {
-	thor_log( LOG_ERR, "%s%d - '%s' %s.", log_msg, line, filename, cairo_status_to_string( status));
-		cairo_surface_destroy( surface);
-		return NULL;
-	}
-	
-	if( image_cache[next_im_cache].used == 1 ) {
-		cairo_surface_destroy( image_cache[next_im_cache].surface);
-	}
-	
-	image_cache[next_im_cache].surface = surface;
-	
-	image_cache[next_im_cache].used = 1;
-	cpycat( image_cache[next_im_cache].filename, filename);
-	
-	/** proceed to next cache **/
-	if( next_im_cache == IMAGE_BUF_SIZE - 1 )
-		next_im_cache = 0;
-	else
-		next_im_cache++;
-	
-	
-	return surface;
-};
-	
-	
-	
-
-
-/*
  * Creates a new layer for a surface.
  * 
  * Parameters: pat_type - The type of the pattern to create.
@@ -294,26 +230,22 @@ create_layer( unsigned char pat_type, surface_t *surface, char *value)
 		pat = cairo_pattern_create_radial( 0.5, 0.5, 0, 0.5, 0.5, 0.5);
 	}
 	else if( pat_type == PATTYPE_PNG ) {
-		cairo_matrix_t  scaling;
-		cairo_surface_t *surface = get_surface_for_png( value);
-		
-		
-		if( surface == NULL )
-			return NULL;
-		
-		cairo_matrix_init_scale( &scaling, cairo_image_surface_get_width( surface),
-										   cairo_image_surface_get_height( surface));		
-		
-		pat = cairo_pattern_create_for_surface( surface);
-		cairo_pattern_set_matrix( pat, &scaling);
+		if( *value == '\0' ) {
+			pat = NULL;
+			goto add_layer;
+		}
+		else
+			pat = get_pattern_for_png( value);
 	}
 	
 	if( (status = cairo_pattern_status( pat)) != CAIRO_STATUS_SUCCESS ) {
 		thor_log( LOG_ERR, "%s%d - Creating pattern: %s", log_msg, line,
 		                   cairo_status_to_string( status));
+		cairo_pattern_destroy( pat);
 		return NULL;
 	}
 	
+  add_layer:
 	newi = surface->nlayers++;
 	_realloc( surface->layer, layer_t, surface->nlayers);
 	surface->layer[newi].pattern  = pat;
@@ -810,16 +742,41 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
  * Returns: 0 on success, -1 on error.
  */
 int
-parse_theme( char *file, thor_theme *theme)
+parse_theme( char *name, thor_theme *theme)
 {
 	FILE *ftheme;
 	int  ret;
-	char *buffer = (char*)malloc( MAX_TOK_LEN + 1);
+	char buffer[FILENAME_MAX];
+	char *file   = get_home_config();
 	
+
+#ifndef TESTING
+	strcat( file, "/themes/");
+	strcat( file, name);
 	
+	if( (ftheme = fopen( file, "r")) == NULL ) {
+		cpycat( cpycat( file, DEFAULT_THEMES), name);
+		
+		if( (ftheme = fopen( file, "r")) == NULL ) {
+			thor_ferrlog( LOG_ERR, "Opening theme '%s'", file);
+			return -1;
+		}
+	}
+#else
+	
+	cpycat( cpycat( file, DEFAULT_THEMES), name);
+		
 	if( (ftheme = fopen( file, "r")) == NULL ) {
 		thor_ferrlog( LOG_ERR, "Opening theme '%s'", file);
 		return -1;
+	}
+#endif
+	
+	thor_log( LOG_DEBUG, "Theme file: '%s'", file);
+
+	if( inofd != -1 ) {
+		if( inotify_add_watch( inofd, file, IN_MODIFY|IN_DELETE_SELF|IN_MOVE_SELF|IN_CLOSE_WRITE) == -1 )
+			thor_ferrlog( LOG_ERR, "Installing Inotify watch on '%s'", file);
 	}
 	
 	/** create log message **/
@@ -833,8 +790,8 @@ parse_theme( char *file, thor_theme *theme)
 	
 	ret = parse_block( ftheme, buffer, LEVEL_THEME, (void*)theme);
 	
-	free( buffer);
 	fclose( ftheme);
+	
 	return ret;
 };
 
@@ -850,9 +807,10 @@ free_surface( surface_t *surface)
 	if( surface->nlayers > 0 ) {
 		int i;
 		
-		for( i = 0; i < surface->nlayers; i++ )
-			cairo_pattern_destroy( surface->layer[i].pattern);
-		
+		for( i = 0; i < surface->nlayers; i++ ) {
+			if( surface->layer[i].pattern != NULL )
+				cairo_pattern_destroy( surface->layer[i].pattern);
+		}
 		free( surface->layer);
 	}
 };
@@ -875,4 +833,6 @@ free_theme( thor_theme *theme)
 	
 	/** free image **/
 	free_surface( &theme->image.picture);
+	
+	memset( theme, 0, sizeof(thor_theme));
 };

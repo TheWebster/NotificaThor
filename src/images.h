@@ -1,16 +1,11 @@
 /* ************************************************************* *\
- * wins.h                                                        *
+ * images.h                                                      *
  *                                                               *
  * Project:     NotificaThor                                     *
  * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
  *                                                               *
- * Description: Function declarations for wins.c                 *
+ * Description: Functions regarding image files.                 *
 \* ************************************************************* */
 
-
-int  prepare_x();
-int  show_osd( thor_message *msg);
-int  kill_osd();
-void cleanup_x();
-void query_extensions();
-void parse_default_theme();
+cairo_pattern_t *get_pattern_for_png( char *filename);
+void            free_image_cache();
