@@ -26,7 +26,7 @@
 #define USAGE\
 	"usage: notificathor [OPTIONS]\n\n"\
 	"    -l, --logfile    Specify logfile to use instead of syslog.\n"\
-	"    -d, --debug      Print debugging messages.\n"\
+	"    -v, --verbose    Print debugging messages.\n"\
 	"    -n, --nodaemon   Don't fork and print debugging messages to stderr.\n"\
 	"    -h, --help       I have no idea.\n"\
 	"    -V, --version    Print version info.\n"

@@ -6,7 +6,6 @@ Description
 
 Themeable On Screen Displays for X.
 
-
 When running a minimal desktop environment with openbox and the likes
 on a notebook, one might miss those fancy popups that appear when you
 change brightnes and volume levels, eject a disk, etc...
