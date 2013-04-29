@@ -39,7 +39,7 @@
 typedef struct
 {
 	xcb_window_t win;     // XCB window
-	timer_t      timer;
+	timer_t      timer;   // timer for display timeout
 	sem_t        mapped;  // value is 0 when window is unmapped and 1 if mapped
 } thor_window_t;
 
@@ -132,9 +132,8 @@ prepare_x()
 	struct sigevent           ev_timeout = {{0}};
 	
 	uint32_t cw_value[5];
-	#define  CW_MASK_ARGB  XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_OVERRIDE_REDIRECT|\
-	                       XCB_CW_EVENT_MASK|XCB_CW_COLORMAP
-	#define  CW_MASK_RGB   XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK
+	uint32_t cw_mask;
+	uint8_t  cw_depth;
 	
 	
 	/** open display **/
@@ -206,26 +205,28 @@ prepare_x()
 		visual = vt_iter.data;
 	}
 	
-	/** create window **/
-	osd.win = xcb_generate_id( con);
+	/** set window attributes **/
 	if( _use_argb ) {
-		/** create argb window **/
+		cw_mask     = XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK|XCB_CW_COLORMAP;
 		cw_value[0] = 0x00000000;
 		cw_value[1] = 0xffffffff;
 		cw_value[2] = 1;
 		cw_value[3] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		cw_value[4] = cmap;
-		xcb_create_window( con, 32, osd.win, screen->root,
-	                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
-	                   visual->visual_id, CW_MASK_ARGB, cw_value);
+		cw_depth    = 32;
 	}
 	else {
+		cw_mask     = XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK;
 		cw_value[0] = 1;
 		cw_value[1] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
-		xcb_create_window( con, XCB_COPY_FROM_PARENT, osd.win, screen->root,
-		                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
-		                   visual->visual_id, CW_MASK_RGB, cw_value);
+		cw_depth    = XCB_COPY_FROM_PARENT;
 	}
+	
+	/** create window **/
+	osd.win = xcb_generate_id( con);
+	xcb_create_window( con, cw_depth, osd.win, screen->root,
+		               0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+		               visual->visual_id, cw_mask, cw_value);
 	
 	/** init "mapped" semaphore **/
 	sem_init( &osd.mapped, 0, 0);
