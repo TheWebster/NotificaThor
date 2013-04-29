@@ -41,25 +41,6 @@ int inofd = -1;
 
 
 /*
- * Sets a timer to an amount of seconds
- * 
- * Parameters: timer   - The ID of the timer to set
- *             seconds - The time to set the timer to
- */
- static void
-settimer( timer_t timer, double seconds)
-{
-	struct itimerspec t_spec =
-	{
-		.it_interval = { 0, 0 },
-		.it_value    = { (time_t)seconds, (seconds - (time_t)seconds)*1000000000 }
-	};
-	
-	timer_settime( timer, 0, &t_spec, NULL);
-};
-
-
-/*
  * Handles a message on the NotificaThor-socket
  * 
  * Parameters: sockfd - the filedescriptor of the socket
@@ -68,7 +49,7 @@ settimer( timer_t timer, double seconds)
  * Returns: 0 on success, -1 on error.
  */
 static int
-handle_message( int sockfd, timer_t timer)
+handle_message( int sockfd)
 {
 	int            ret = 0;
 	fd_set         set;
@@ -136,8 +117,7 @@ handle_message( int sockfd, timer_t timer)
 	if( msg.timeout == 0 )
 		msg.timeout = _osd_default_timeout;
 		
-	if( show_osd( &msg) == 0 )
-		settimer( timer, msg.timeout);
+	show_osd( &msg);
 		
 	free_message( &msg);
 	
@@ -159,17 +139,6 @@ sig_handler( int sig)
 
 
 /*
- * Handler for timeout.
- */
-static void
-timeout_handler()
-{
-	kill_osd();
-	return;
-};
-
-
-/*
  * Create socket, timer, sighandler and play main loop.
  * 
  * Returns: 0 on success, -1 on error.
@@ -179,8 +148,6 @@ event_loop()
 {
 	int                 ret        = 1;
 	struct sigaction    term_sa    = {{0}};
-	struct sigevent     ev_timeout = {{0}};
-	timer_t             timer;
 	
 	
 	/** install signalhandler **/
@@ -195,11 +162,6 @@ event_loop()
 	/** parse config file and theme**/
 	parse_conf();
 	parse_default_theme();
-	
-	/** install timer **/
-	ev_timeout.sigev_notify = SIGEV_THREAD;
-	ev_timeout.sigev_notify_function = timeout_handler;
-	timer_create( CLOCK_REALTIME, &ev_timeout, &timer);
 	
 	/** prepare window **/
 	if( prepare_x() == -1 )
@@ -234,7 +196,7 @@ event_loop()
 		
 		/** message via thor-cli **/
 		if( FD_ISSET( sockfd, &set) ) {
-			if( handle_message( sockfd, timer) == -1 )
+			if( handle_message( sockfd) == -1 )
 				goto err_x;
 		}
 		/** Inotify event **/
@@ -266,7 +228,6 @@ event_loop()
 	remove( socket_path);
 	go_up( socket_path);
 	remove( socket_path);
-	timer_delete( timer);
 	close_logger();
 	
 	return ret;

@@ -12,6 +12,7 @@
 #define _GRAPHICAL_
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
+#include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
@@ -38,6 +39,7 @@
 typedef struct
 {
 	xcb_window_t win;     // XCB window
+	timer_t      timer;
 	sem_t        mapped;  // value is 0 when window is unmapped and 1 if mapped
 } thor_window_t;
 
@@ -82,6 +84,17 @@ xevent_loop()
 
 
 /*
+ * Handler for timeout.
+ */
+static void
+timeout_handler()
+{
+	kill_osd();
+	return;
+};
+
+
+/*
  * Queries X extensions.
  */
 void
@@ -116,6 +129,7 @@ prepare_x()
 	xcb_colormap_t            cmap = 0;
 	xcb_intern_atom_cookie_t  wmtype_cookie, note_cookie;
 	xcb_intern_atom_reply_t   *wmtype_reply, *note_reply;
+	struct sigevent           ev_timeout = {{0}};
 	
 	uint32_t cw_value[5];
 	#define  CW_MASK_ARGB  XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_OVERRIDE_REDIRECT|\
@@ -216,6 +230,11 @@ prepare_x()
 	/** init "mapped" semaphore **/
 	sem_init( &osd.mapped, 0, 0);
 	
+	/** install timer **/
+	ev_timeout.sigev_notify = SIGEV_THREAD;
+	ev_timeout.sigev_notify_function = timeout_handler;
+	timer_create( CLOCK_REALTIME, &ev_timeout, &osd.timer);
+	
 	/** start xevent_loop thread **/
 	pthread_create( &xevents, NULL, (void*)xevent_loop, NULL);
 	
@@ -246,6 +265,25 @@ parse_default_theme()
 	if( *_default_theme != '\0') {
 		parse_theme( _default_theme, &theme);
 	}
+};
+
+
+/*
+ * Sets a timer to an amount of seconds
+ * 
+ * Parameters: timer   - The ID of the timer to set
+ *             seconds - The time to set the timer to
+ */
+static void
+settimer( timer_t timer, double seconds)
+{
+	struct itimerspec t_spec =
+	{
+		.it_interval = { 0, 0 },
+		.it_value    = { (time_t)seconds, (seconds - (time_t)seconds)*1000000000 }
+	};
+	
+	timer_settime( timer, 0, &t_spec, NULL);
 };
 
 
@@ -442,6 +480,8 @@ show_osd( thor_message *msg)
 	cairo_surface_destroy( surf_osd);
 	sem_post( &osd.mapped);
 	
+	settimer( osd.timer, msg->timeout);
+	
 	return 0;
 };
 
@@ -454,6 +494,7 @@ cleanup_x()
 {
 	xcb_destroy_window( con, osd.win);
 	sem_destroy( &osd.mapped);
+	timer_delete( osd.timer);
 	pthread_cancel( xevents);
 	free_image_cache();
 	xcb_flush( con);
