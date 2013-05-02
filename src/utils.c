@@ -29,6 +29,12 @@ use_largest( uint32_t *dest, uint32_t src)
 };
 
 
+/*
+ * Removes last part of a path.
+ * /foo/bar/path -> /foo/bar
+ * 
+ * Parameters: string - A pathname.
+ */
 void
 go_up( char *string)
 {
@@ -39,6 +45,15 @@ go_up( char *string)
 };
 
 
+/*
+ * Copies src to dst and returns pointer to the terminating '\0' of
+ * dst for nested calls.
+ * 
+ * Parameters: dst - Destination string.
+ *             src - Source string.
+ * 
+ * Returns: Pointer to terminating '\0' of dst.
+ */
 char*
 cpycat( char* dst, char* src)
 {
@@ -86,11 +101,18 @@ _parse_number( char *string, int *number, int allow_neg, char *logmsg, int line)
 };
 
 
+/*
+ * Returns a static array of length FILENAME_MAX + 1, which contains
+ * $XDG_CONFIG_HOME/NotificaThor or, if the variable is not set,
+ * ~/.config/NotificaThor.
+ * 
+ * Returns: Pointer to static array.
+ */
 char *
 get_home_config()
 {
 	char        *env = getenv( "XDG_CONFIG_HOME");
-	static char ret[FILENAME_MAX];
+	static char ret[FILENAME_MAX + 1];
 	
 	
 	if( !env || !*env )
@@ -102,11 +124,18 @@ get_home_config()
 };
 
 
+/*
+ * Returns a static array of length FILENAME_MAX + 1, which contains
+ * $XDG_CACHE_HOME or, if the variable is not set,
+ * ~/.cache.
+ * 
+ * Returns: Pointer to static array.
+ */
 char *
 get_xdg_cache()
 {
 	char        *env = getenv( "XDG_CACHE_HOME");
-	static char ret[FILENAME_MAX];
+	static char ret[FILENAME_MAX + 1];
 	
 	
 	if( !env || !*env )

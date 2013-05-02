@@ -134,7 +134,7 @@ handle_message( int sockfd, timer_t timer)
 	
 	/** initializing the popup **/
 	if( msg.timeout == 0 )
-		msg.timeout = _osd_default_timeout;
+		msg.timeout = config_osd_default_timeout;
 		
 	if( show_osd( &msg) == 0 )
 		settimer( timer, msg.timeout);

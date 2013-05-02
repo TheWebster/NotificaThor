@@ -9,7 +9,8 @@
 \* ************************************************************* */
 
 
-#define _GRAPHICAL_
+#define CONFIG_GRAPHICAL
+
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
 #include <pthread.h>
@@ -91,7 +92,7 @@ query_extensions()
 	
 	
 	// SHAPE extension
-	if( _use_xshape ) {
+	if( config_use_xshape ) {
 		qext_reply = xcb_get_extension_data( con, &xcb_shape_id);
 		has_xshape = qext_reply->present;
 		if( !has_xshape )
@@ -151,13 +152,13 @@ prepare_x()
 	
 	/** get visual **/
 	depth_iter = xcb_screen_allowed_depths_iterator( screen);
-	if( _use_argb ) {
+	if( config_use_argb ) {
 		/** get argb visual **/
 		while( depth_iter.rem && depth_iter.data->depth != 32 )
 			xcb_depth_next( &depth_iter);
 		
 		if( depth_iter.rem == 0 ) {
-			_use_argb = 0;
+			config_use_argb = 0;
 			thor_log( LOG_ERR, "32-bit is not allowed on this screen.");
 		}
 		else {
@@ -166,7 +167,7 @@ prepare_x()
 				xcb_visualtype_next( &vt_iter);
 			
 			if( vt_iter.rem == 0 ) {
-				_use_argb = 0;
+				config_use_argb = 0;
 				thor_log( LOG_ERR, "No appropriate 32 bit visual found.");
 			}
 			else {
@@ -194,7 +195,7 @@ prepare_x()
 	
 	/** create window **/
 	osd.win = xcb_generate_id( con);
-	if( _use_argb ) {
+	if( config_use_argb ) {
 		/** create argb window **/
 		cw_value[0] = 0x00000000;
 		cw_value[1] = 0xffffffff;
@@ -243,8 +244,8 @@ parse_default_theme()
 	theme.bar.full.border.operator      = CAIRO_OPERATOR_OVER;
 	
 	/** parse global theme **/
-	if( *_default_theme != '\0') {
-		parse_theme( _default_theme, &theme);
+	if( *config_default_theme != '\0') {
+		parse_theme( config_default_theme, &theme);
 	}
 };
 
@@ -319,15 +320,15 @@ show_osd( thor_message *msg)
 	}
 	
 	/** set osd position **/
-	if( _osd_default_x.abs_flag )  // x
-		cval[0] = _osd_default_x.coord;
+	if( config_osd_default_x.abs_flag )  // x
+		cval[0] = config_osd_default_x.coord;
 	else
-		cval[0] = (screen->width_in_pixels  / 2) - ( cval[2] / 2 ) + _osd_default_x.coord; // x
+		cval[0] = (screen->width_in_pixels  / 2) - ( cval[2] / 2 ) + config_osd_default_x.coord; // x
 	
-	if( _osd_default_y.abs_flag )  // y
-		cval[1] = _osd_default_y.coord;
+	if( config_osd_default_y.abs_flag )  // y
+		cval[1] = config_osd_default_y.coord;
 	else
-		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + _osd_default_y.coord; // y
+		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + config_osd_default_y.coord; // y
 	
 	
 	/** configure window x, y, width, height**/
@@ -425,7 +426,7 @@ show_osd( thor_message *msg)
 		cairo_paint( cr);
 		
 		/** use buffering surface as mask **/
-		if( _use_xshape != 2 ) {
+		if( config_use_xshape != 2 ) {
 			cairo_set_operator( cr, CAIRO_OPERATOR_OVER);
 			cairo_mask_surface( cr, surf_buf, 0, 0);
 		}

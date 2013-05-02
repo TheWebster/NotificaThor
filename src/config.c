@@ -8,8 +8,7 @@
 \* ************************************************************* */
 
 
-#define _CONFIG_
-#define _GRAPHICAL_
+#define CONFIG_GRAPHICAL
 
 #include <errno.h>
 #include <limits.h>
@@ -26,12 +25,12 @@
 #include "logging.h"
 
 
-char          _default_theme[MAX_THEME_LEN + 1] = {0};
-double        _osd_default_timeout              = 2;
-coord_t       _osd_default_x                    = {0, 0};
-coord_t       _osd_default_y                    = {0, 0};
-int           _use_argb                         = 1;
-int           _use_xshape                       = 0;
+char          config_default_theme[MAX_THEME_LEN + 1] = {0};
+double        config_osd_default_timeout              = 2;
+coord_t       config_osd_default_x                    = {0, 0};
+coord_t       config_osd_default_y                    = {0, 0};
+int           config_use_argb                         = 1;
+int           config_use_xshape                       = 0;
 
 
 #define MAX_LINE_LEN      FILENAME_MAX + 64
@@ -205,28 +204,28 @@ parse_conf()
 		}
 		
 		if( strcmp( key, "use_argb") == 0 )
-			parse_bool( value, &_use_argb);
+			parse_bool( value, &config_use_argb);
 		else if( strcmp( key, "use_xshape") == 0 ) {
 			if( strcmp( value, "whole") == 0 )
-				_use_xshape = 2;
+				config_use_xshape = 2;
 			else
-				parse_bool( value, &_use_xshape);
+				parse_bool( value, &config_use_xshape);
 		}
 		else if( strcmp( key, "default_theme") == 0 )
-			strncpy( _default_theme, value, MAX_THEME_LEN);
+			strncpy( config_default_theme, value, MAX_THEME_LEN);
 		else if( strcmp( key, "osd_default_timeout") == 0 ) {
 			char   *endptr;
 			double to = strtod( value, &endptr);
 			
 			if( *endptr == 0 )
-				_osd_default_timeout = to;
+				config_osd_default_timeout = to;
 			else
 				thor_log( LOG_ERR, "%s%d - '%s' is not a valid number.", log_msg, line, value);
 		}
 		else if( strcmp( key, "osd_default_x") == 0 )
-			parse_coord( value, &_osd_default_x);
+			parse_coord( value, &config_osd_default_x);
 		else if( strcmp( key, "osd_default_y") == 0 )
-			parse_coord( value, &_osd_default_y);
+			parse_coord( value, &config_osd_default_y);
 		else {
 			thor_log( LOG_ERR, "%s%d - unknown key '%s'.", log_msg, line, key);
 		}
@@ -241,9 +240,9 @@ parse_conf()
 						 "\tosd_default_timeout = %f seconds\n"
 						 "\tosd_default_x       = %d, abs = %d\n"
 						 "\tosd_default_y       = %d, abs = %d",
-			  _use_argb, _use_xshape, _default_theme, _osd_default_timeout,
-			  _osd_default_x.coord, _osd_default_x.abs_flag,
-			  _osd_default_y.coord, _osd_default_y.abs_flag);
+			  config_use_argb, config_use_xshape, config_default_theme, config_osd_default_timeout,
+			  config_osd_default_x.coord, config_osd_default_x.abs_flag,
+			  config_osd_default_y.coord, config_osd_default_y.abs_flag);
 #endif
 	          
 	return 0;
