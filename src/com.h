@@ -18,6 +18,7 @@ typedef struct
 	#define COM_QUERY    (1 << 0)
 	#define COM_NO_IMAGE (1 << 1)
 	#define COM_NO_BAR   (1 << 2)
+	#define COM_NOTE     (1 << 3)
 	uint32_t     flags;
 	double       timeout;
 	ssize_t      image_len;

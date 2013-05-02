@@ -44,6 +44,7 @@ static const struct option long_opts[] =
 	{ "bar"     , required_argument, NULL, 'b'},
 	{ "no-image", no_argument      , NULL, '0'},
 	{ "no-bar"  , no_argument      , NULL, '1'},
+	{ "note"    , no_argument      , NULL, 'n'},
 	{ "help"    , no_argument      , NULL, 'h'},
 	{ "version" , no_argument      , NULL, 'V'},
 	{ NULL      , 0                , NULL,  0 }
@@ -131,7 +132,11 @@ main( int argc, char *argv[])
 			
 			case '1': // --no-bar
 				msg.flags |= COM_NO_BAR;
-				
+				break;
+			
+			case 'n': // notification
+				msg.flags |= COM_NOTE;
+				break;
 		}
 	}
 	

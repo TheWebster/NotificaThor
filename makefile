@@ -39,7 +39,8 @@ CFLAGS   += -D 'VERBOSE'
 endif
 	
 THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread
-_THOR_OBJ = com.o config.o drawing.o logging.o NotificaThor.o theme.o utils.o wins.o images.o
+_THOR_OBJ = com.o config.o drawing.o logging.o NotificaThor.o theme.o\
+            utils.o wins.o wins_notifications.o images.o
 THOR_OBJ  = $(addprefix obj/, $(_THOR_OBJ))
 
 BIN_PATH  = $(prefix)/usr/

@@ -9,8 +9,7 @@
 
 
 int  prepare_x();
-int  show_osd( thor_message *msg);
-int  kill_osd();
+int  show_win( thor_message *msg);
 void cleanup_x();
 void query_extensions();
 void parse_default_theme();

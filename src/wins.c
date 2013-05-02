@@ -30,24 +30,20 @@
 #include "theme.h"
 #include "config.h"
 #include "wins.h"
+#include "wins_private.h"
 #include "drawing.h"
 #include "NotificaThor.h"
 #include "logging.h"
 #include "images.h"
 
 
-typedef struct
-{
-	xcb_window_t win;     // XCB window
-	timer_t      timer;   // timer for display timeout
-	sem_t        mapped;  // value is 0 when window is unmapped and 1 if mapped
-} thor_window_t;
+xcb_connection_t *con;
+thor_window_t    wins[N_NOTES + 1];
 
 
-static xcb_connection_t *con;
+static uint32_t         stack_height = PAD_BORDER;
 static xcb_screen_t     *screen;
 static xcb_visualtype_t *visual = NULL;
-static thor_window_t    osd;
 static pthread_t        xevents;
 static int              has_xshape = 0;
 
@@ -58,39 +54,38 @@ extern int  xerror;
 
 
 /*
- * Global event loop.
+ * Handler for timeout.
  */
 static void
-xevent_loop()
+timeout_handler( union sigval sv)
 {
-	while( 1 ) {
-		xcb_generic_event_t *event = xcb_wait_for_event( con);
-		
-		
-		if( xcb_connection_has_error( con) ) {
-			xerror = 1;
-			kill( getpid(), SIGINT);
-			return;
-		}
-			
-		switch( event->response_type ) {			
-			case XCB_MAP_NOTIFY:
-				sem_post( &osd.mapped);
-				break;
-		}
-		free( event);
+	xcb_unmap_window( con, wins[sv.sival_int].win);
+	xcb_flush(con);
+	sem_wait( &wins[sv.sival_int].mapped);
+	
+	if( sv.sival_int < N_NOTES ) {
+		stack_height -= (wins[sv.sival_int].extents[3] + PAD_WINS);
+		remove_note( &wins[sv.sival_int]);
 	}
 };
 
 
 /*
- * Handler for timeout.
+ * Sets a timer to an amount of seconds
+ * 
+ * Parameters: timer   - The ID of the timer to set
+ *             seconds - The time to set the timer to
  */
 static void
-timeout_handler()
+settimer( timer_t timer, double seconds)
 {
-	kill_osd();
-	return;
+	struct itimerspec t_spec =
+	{
+		.it_interval = { 0, 0 },
+		.it_value    = { (time_t)seconds, (seconds - (time_t)seconds)*1000000000 }
+	};
+	
+	timer_settime( timer, 0, &t_spec, NULL);
 };
 
 
@@ -114,6 +109,39 @@ query_extensions()
 
 
 /*
+ * Global event loop.
+ */
+static void
+xevent_loop()
+{
+	while( 1 ) {
+		xcb_generic_event_t *event = xcb_wait_for_event( con);
+		
+		
+		if( xcb_connection_has_error( con) ) {
+			xerror = 1;
+			kill( getpid(), SIGINT);
+			return;
+		}
+			
+		switch( event->response_type ) {
+			int i;
+						
+			case XCB_MAP_NOTIFY:
+				for( i = 0; i <= N_NOTES; i++ ) {
+					if( wins[i].win == ((xcb_map_notify_event_t*)event)->window ) {
+						sem_post( &wins[i].mapped);
+						break;
+					}
+				}
+				break;
+		}
+		free( event);
+	}
+};
+
+
+/*
  * Setup all X related data.
  * 
  * Returns: 0 on success, -1 on error.
@@ -121,6 +149,7 @@ query_extensions()
 int
 prepare_x()
 {
+	int i;
 	char                      *env_display;
 	int                       scr_nbr;
 	xcb_screen_iterator_t     scr_iter;
@@ -205,10 +234,14 @@ prepare_x()
 		visual = vt_iter.data;
 	}
 	
+	/** get atoms **/
+	wmtype_reply = xcb_intern_atom_reply( con, wmtype_cookie, NULL);
+	note_reply   = xcb_intern_atom_reply( con, note_cookie  , NULL);
+	
 	/** set window attributes **/
 	if( _use_argb ) {
 		cw_mask     = XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK|XCB_CW_COLORMAP;
-		cw_value[0] = 0x00000000;
+		cw_value[0] = 0xff000000;
 		cw_value[1] = 0xffffffff;
 		cw_value[2] = 1;
 		cw_value[3] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
@@ -222,28 +255,31 @@ prepare_x()
 		cw_depth    = XCB_COPY_FROM_PARENT;
 	}
 	
-	/** create window **/
-	osd.win = xcb_generate_id( con);
-	xcb_create_window( con, cw_depth, osd.win, screen->root,
-		               0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
-		               visual->visual_id, cw_mask, cw_value);
-	
-	/** init "mapped" semaphore **/
-	sem_init( &osd.mapped, 0, 0);
-	
-	/** install timer **/
-	ev_timeout.sigev_notify = SIGEV_THREAD;
-	ev_timeout.sigev_notify_function = timeout_handler;
-	timer_create( CLOCK_REALTIME, &ev_timeout, &osd.timer);
+	/** create wins **/
+	for( i = 0; i <= N_NOTES; i++ ) {
+		wins[i].win = xcb_generate_id( con);
+		xcb_create_window( con, cw_depth, wins[i].win, screen->root,
+		                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
+		                   visual->visual_id, cw_mask, cw_value);
+		xcb_change_property( con, XCB_PROP_MODE_REPLACE, wins[i].win, wmtype_reply->atom,
+	                         XCB_ATOM_ATOM, 32, 1, &note_reply->atom);
+	    
+	    /** init "mapped" semaphore **/
+		sem_init( &wins[i].mapped, 0, 0);
+		
+		/** install timer **/
+		ev_timeout.sigev_notify           = SIGEV_THREAD;
+		ev_timeout.sigev_value.sival_int  = i;
+		ev_timeout.sigev_notify_function  = timeout_handler;
+		timer_create( CLOCK_REALTIME, &ev_timeout, &wins[i].timer);
+		
+		/** initialize stack **/
+		wins[i].stack_pos = -1;
+	}
 	
 	/** start xevent_loop thread **/
 	pthread_create( &xevents, NULL, (void*)xevent_loop, NULL);
 	
-	/** set _NET_WM_WINDOW_TYPE_NOTIFICATION **/
-	wmtype_reply = xcb_intern_atom_reply( con, wmtype_cookie, NULL);
-	note_reply   = xcb_intern_atom_reply( con, note_cookie  , NULL);
-	xcb_change_property( con, XCB_PROP_MODE_REPLACE, osd.win, wmtype_reply->atom,
-	                     XCB_ATOM_ATOM, 32, 1, &note_reply->atom);
 	free( wmtype_reply);
 	free( note_reply);
 	
@@ -251,6 +287,9 @@ prepare_x()
 };
 
 
+/*
+ * (Re-)read theme from default_theme.
+ */
 void
 parse_default_theme()
 {
@@ -270,118 +309,120 @@ parse_default_theme()
 
 
 /*
- * Sets a timer to an amount of seconds
+ * Render a window as specified in the message.
  * 
- * Parameters: timer   - The ID of the timer to set
- *             seconds - The time to set the timer to
- */
-static void
-settimer( timer_t timer, double seconds)
-{
-	struct itimerspec t_spec =
-	{
-		.it_interval = { 0, 0 },
-		.it_value    = { (time_t)seconds, (seconds - (time_t)seconds)*1000000000 }
-	};
-	
-	timer_settime( timer, 0, &t_spec, NULL);
-};
-
-
-/*
- * Maps and draws OSD.
+ * Parameters: msg - Pointer to thor_message.
  * 
- * Parameters: msg - Pointer to message struct.
- * 
- * Returns: 0 on success, -1 on error.
+ * Returns: 0 on success and -1 on error.
  */
 int
-show_osd( thor_message *msg)
+show_win( thor_message *msg)
 {
-	uint32_t        cval[4]   = {0};
+	thor_window_t   *window;
 	cairo_t         *cr       = NULL;
 	cairo_surface_t *surf_buf = NULL;
-	cairo_surface_t *surf_osd = NULL;
+	cairo_surface_t *surf_win = NULL;
 	
 	
-	/** stop here if there is nothing to be done **/
-	if( (msg->flags & (COM_NO_IMAGE|COM_NO_BAR)) == (COM_NO_IMAGE|COM_NO_BAR) ) {
-		thor_log( LOG_DEBUG, "No elements to be drawn.");
-		return -1;
-	}
+	if( msg->flags & COM_NOTE ) {
+		if( (window = get_note( msg)) == NULL )
+			return -1;
 		
-	if( msg->image_len > 0 )
-		image_string = msg->image;
-	
-	/** wait for window to be mapped **/
-	if( sem_trywait( &osd.mapped) == -1 ) {
-		xcb_map_window( con, osd.win);
-		xcb_flush( con);
-		sem_wait( &osd.mapped);
+		/** get geometry **/
+		window->extents[2] = NOTE_WIDTH;
+		window->extents[3] = theme.image.height + 2*theme.padtoborder_y;
+		
+		theme.image.x = theme.padtoborder_x;
+		theme.image.y = window->extents[3] / 2 - theme.image.height / 2;
+		
+		/** set window position (bottom right) **/
+		window->extents[0] = screen->width_in_pixels  - (window->extents[2] + PAD_BORDER);
+		window->extents[1] = screen->height_in_pixels - stack_height - window->extents[3];
+		stack_height      += window->extents[3] + PAD_WINS;
 	}
-	
-	/** get custom geometry **/
-	cval[2] = 0;
-	cval[3] = theme.padtoborder_y;
-	if( theme.custom_dimensions ) {
-		if( !(msg->flags & COM_NO_IMAGE) ) {
-			cval[2] = theme.image.x + theme.image.width;
-			cval[3] = theme.image.y + theme.image.height;
-		}
-		if( !(msg->flags & COM_NO_BAR) ) {
-			use_largest( &cval[2], theme.bar.x + theme.bar.width);
-			use_largest( &cval[3], theme.bar.y + theme.bar.height);
-		}
-	}
-	/** get default geometry **/
 	else {
-		// dimensions
-		if( !(msg->flags & COM_NO_IMAGE) ) {
-			theme.image.y = cval[3];
-			cval[2]  = theme.image.width;
-			cval[3] += theme.image.height;
-		}
-		if( !(msg->flags & COM_NO_BAR) ) {
-			if( cval[3] > theme.padtoborder_y )
-				cval[3] += 20;
-			
-			theme.bar.y = cval[3];
-			use_largest( &cval[2], theme.bar.width);
-			cval[3] += theme.bar.height;
-		}
-		cval[2] += 2 * theme.padtoborder_x;
-		cval[3] += theme.padtoborder_y;
+		window = &wins[N_NOTES];
 		
-		// positions
-		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
-		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
+		if( (msg->flags & (COM_NO_IMAGE|COM_NO_BAR)) == (COM_NO_IMAGE|COM_NO_BAR) ) {
+			thor_log( LOG_DEBUG, "No elements to be drawn.");
+			return -1;
+		}
+		
+		/** get custom geometry **/
+		window->extents[2] = 0;
+		window->extents[3] = theme.padtoborder_y;
+		if( theme.custom_dimensions ) {
+			if( !(msg->flags & COM_NO_IMAGE) ) {
+				window->extents[2] = theme.image.x + theme.image.width;
+				window->extents[3] = theme.image.y + theme.image.height;
+			}
+			if( !(msg->flags & COM_NO_BAR) ) {
+				use_largest( &window->extents[2], theme.bar.x + theme.bar.width);
+				use_largest( &window->extents[3], theme.bar.y + theme.bar.height);
+			}
+		}
+		/** get default geometry **/
+		else {
+			// dimensions
+			if( !(msg->flags & COM_NO_IMAGE) ) {
+				theme.image.y = window->extents[3];
+				window->extents[2]  = theme.image.width;
+				window->extents[3] += theme.image.height;
+			}
+			if( !(msg->flags & COM_NO_BAR) ) {
+				if( window->extents[3] > theme.padtoborder_y )
+					window->extents[3] += 20;
+				
+				theme.bar.y = window->extents[3];
+				use_largest( &window->extents[2], theme.bar.width);
+				window->extents[3] += theme.bar.height;
+			}
+			window->extents[2] += 2 * theme.padtoborder_x;
+			window->extents[3] += theme.padtoborder_y;
+			
+			// positions
+			theme.image.x = (window->extents[2] / 2) - (theme.image.width / 2);
+			theme.bar.x   = (window->extents[2] / 2) - (theme.bar.width / 2);
+		}
+		
+		/** set osd position **/
+		if( _osd_default_x.abs_flag )  // x
+			window->extents[0] = _osd_default_x.coord;
+		else
+			window->extents[0] = (screen->width_in_pixels  / 2)
+			                   - ( window->extents[2] / 2 )
+			                   + _osd_default_x.coord; // x
+		
+		if( _osd_default_y.abs_flag )  // y
+			window->extents[1] = _osd_default_y.coord;
+		else
+			window->extents[1] = (screen->height_in_pixels / 2)
+			                   - ( window->extents[3] / 2 )
+			                   + _osd_default_y.coord; // y
 	}
 	
-	/** set osd position **/
-	if( _osd_default_x.abs_flag )  // x
-		cval[0] = _osd_default_x.coord;
-	else
-		cval[0] = (screen->width_in_pixels  / 2) - ( cval[2] / 2 ) + _osd_default_x.coord; // x
-	
-	if( _osd_default_y.abs_flag )  // y
-		cval[1] = _osd_default_y.coord;
-	else
-		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + _osd_default_y.coord; // y
-	
+	/** map window **/
+	if( sem_trywait( &window->mapped) == -1 ) {
+		xcb_map_window( con, window->win);
+		xcb_flush( con);
+		sem_wait( &window->mapped);
+	}
 	
 	/** configure window x, y, width, height**/
-	xcb_configure_window( con, osd.win, 15, cval);
+	xcb_configure_window( con, window->win, 15, window->extents);
+	
 	/** initialize cairo **/
-	surf_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
-	surf_buf = cairo_image_surface_create( CAIRO_FORMAT_ARGB32, cval[2], cval[3]);
+	surf_win = cairo_xcb_surface_create( con, window->win, visual, window->extents[2], window->extents[3]);
+	surf_buf = cairo_image_surface_create( CAIRO_FORMAT_ARGB32, window->extents[2], window->extents[3]);
 	cr       = cairo_create( surf_buf);
+	
+	image_string = msg->image;
 	
 	/** draw background to buffering surface**/
 	fallback_surface.surf_color   = 0xff000000;
 	fallback_surface.surf_op      = CAIRO_OPERATOR_OVER;
-	draw_surface( cr, &theme.background, 0, 0, 0, cval[2], cval[3]);
-	draw_border( cr, &theme.background, 0, 0, 0, cval[2], cval[3]);
-	
+	draw_surface( cr, &theme.background, 0, 0, 0, window->extents[2], window->extents[3]);
+	draw_border( cr, &theme.background, 0, 0, 0, window->extents[2], window->extents[3]);
 	
 	/** draw image to buffering surface**/
 	if( !(msg->flags & COM_NO_IMAGE) ) {
@@ -392,8 +433,9 @@ show_osd( thor_message *msg)
 		draw_border( cr, &theme.image.picture, 0, theme.image.x, theme.image.y,
 		             theme.image.width, theme.image.height);
 	}
+	
 	/** draw bar draw to buffering surface**/
-	if( !(msg->flags & COM_NO_BAR) ) {
+	if( !(msg->flags & (COM_NO_BAR|COM_NOTE)) ) {
 		double x      = theme.bar.x;
 		double y      = theme.bar.y;
 		double width  = theme.bar.width;
@@ -438,10 +480,11 @@ show_osd( thor_message *msg)
 		             theme.bar.width, theme.bar.height);
 		
 	}
+	
 	cairo_destroy( cr);
 	
 	/** copy buffering surface to window **/
-	cr = cairo_create( surf_osd);
+	cr = cairo_create( surf_win);
 	cairo_set_source_surface( cr, surf_buf, 0, 0);
 	cairo_set_operator( cr, CAIRO_OPERATOR_SOURCE);
 	cairo_paint( cr);
@@ -455,8 +498,8 @@ show_osd( thor_message *msg)
 		cairo_surface_t *surf_shape;
 		
 		
-		xcb_create_pixmap( con, 1, bm_shape, osd.win, cval[2], cval[3]);
-		surf_shape = cairo_xcb_surface_create_for_bitmap( con, screen, bm_shape, cval[2], cval[3]);
+		xcb_create_pixmap( con, 1, bm_shape, window->win, window->extents[2], window->extents[3]);
+		surf_shape = cairo_xcb_surface_create_for_bitmap( con, screen, bm_shape, window->extents[2], window->extents[3]);
 		cr         = cairo_create( surf_shape);
 		
 		/** clear bitmap (completely click-through) **/
@@ -472,19 +515,20 @@ show_osd( thor_message *msg)
 		cairo_destroy( cr);
 		cairo_surface_destroy( surf_shape);
 		
-		xcb_shape_mask( con, XCB_SHAPE_SO_SET, XCB_SHAPE_SK_INPUT, osd.win, 0, 0, bm_shape);
+		xcb_shape_mask( con, XCB_SHAPE_SO_SET, XCB_SHAPE_SK_INPUT, window->win, 0, 0, bm_shape);
+		xcb_free_pixmap( con, bm_shape);
 		xcb_flush( con);
 	}
 	
 	/** clean up **/
 	cairo_surface_destroy( surf_buf);
-	cairo_surface_destroy( surf_osd);
-	sem_post( &osd.mapped);
-	
-	settimer( osd.timer, msg->timeout);
+	cairo_surface_destroy( surf_win);
+	sem_post( &window->mapped);
+	settimer( window->timer, msg->timeout);
 	
 	return 0;
 };
+	
 
 
 /*
@@ -493,26 +537,18 @@ show_osd( thor_message *msg)
 void
 cleanup_x()
 {
-	xcb_destroy_window( con, osd.win);
-	sem_destroy( &osd.mapped);
-	timer_delete( osd.timer);
+	int i;
+	
+	
 	pthread_cancel( xevents);
 	free_image_cache();
+	
+	/** destroy notes **/
+	for( i = 0; i <= N_NOTES; i++ ) {
+		xcb_destroy_window( con, wins[i].win);
+		sem_destroy( &wins[i].mapped);
+		timer_delete( wins[i].timer);
+	}
 	xcb_flush( con);
 	xcb_disconnect( con);
-	
-	return;
-};
-
-
-/*
- * Unmap OSD.
- */
-int
-kill_osd()
-{
-	xcb_unmap_window( con, osd.win);
-	sem_wait( &osd.mapped);
-	xcb_flush( con);
-	return 0;
 };

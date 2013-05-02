@@ -117,7 +117,7 @@ handle_message( int sockfd)
 	if( msg.timeout == 0 )
 		msg.timeout = _osd_default_timeout;
 		
-	show_osd( &msg);
+	show_win( &msg);
 		
 	free_message( &msg);
 	
