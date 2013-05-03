@@ -379,7 +379,7 @@ parse_symbol( int *target, char *key, theme_symbol_t *sym_list)
 	
 	
 	while( strcmp( sym_list[i].string, key) != 0 ) {
-		if( sym_list[i].string == NULL ) {
+		if( *sym_list[i].string == '\0' ) {
 			thor_log( LOG_ERR, "%s%d - Unknown symbol '%s'.", log_msg, line, key);
 			return -1;
 		}

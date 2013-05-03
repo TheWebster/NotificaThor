@@ -1,0 +1,85 @@
+/*
+ * Bold looking; demonstrates shading on rounded corners.
+ */
+
+pad_to_border_x:  20;
+pad_to_border_y:  20;
+
+BACKGROUND
+{
+	radius_topleft:     30;
+	radius_topright:    30;
+	radius_bottomleft:  30;
+	radius_bottomright: 30;
+	
+	linear {
+		operator: over;
+		stop: #aaa | 0;
+		stop: #999 | 1;
+	}
+	
+	border {
+		operator: over;
+		type: topleft;
+		top-color: #ccc;
+		color: #444;
+		width: 2;
+	}
+}
+
+IMAGE
+{
+	width: 128;
+	height: 128;
+	
+	picture {
+		png{}
+	}
+}
+
+BAR
+{
+	width: 200;
+	height: 20;
+	
+	empty {
+		radius_topleft:     10;
+		radius_topright:    10;
+		radius_bottomleft:  10;
+		radius_bottomright: 10;
+		
+		linear {
+			operator: source;
+			stop: #0000 | 0;
+		}
+		
+		border {
+		operator: over;
+		type: topleft;
+		top-color: #444;
+		color: #ccc;
+		width: 2;
+		}
+	}
+	full {
+		radius_topleft:     10;
+		radius_topright:    10;
+		radius_bottomleft:  10;
+		radius_bottomright: 10;
+		
+		linear {
+			operator: source;
+			stop: #aa6666| 0;
+			stop: #aa0000 | 0.5;
+			stop: #aa6666 | 1;
+		}
+		
+		border {
+			operator:  over;
+			type:      topleft;
+			width:     1;
+			top-color: #77ffffff;
+			color:     #77000000;
+		}
+	}
+}

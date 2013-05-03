@@ -115,7 +115,7 @@ handle_message( int sockfd)
 	
 	/** initializing the popup **/
 	if( msg.timeout == 0 )
-		msg.timeout = _osd_default_timeout;
+		msg.timeout = config_osd_default_timeout;
 		
 	show_win( &msg);
 		

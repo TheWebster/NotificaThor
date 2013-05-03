@@ -18,16 +18,16 @@ typedef struct
 } coord_t;
 
 #define MAX_THEME_LEN 64
-extern char         _default_theme[];
-extern double       _osd_default_timeout;
+extern char   config_default_theme[];
+extern double config_osd_default_timeout;
 
-#ifdef _GRAPHICAL_
+#ifdef CONFIG_GRAPHICAL
 
 #define COORDS_ABSOLUTE( coord)    (coord & 0xfffffffe)
-extern coord_t        _osd_default_x;
-extern coord_t        _osd_default_y;
-extern int            _use_argb;
-extern int            _use_xshape;
+extern coord_t config_osd_default_x;
+extern coord_t config_osd_default_y;
+extern int     config_use_argb;
+extern int     config_use_xshape;
 	
 #endif
 	

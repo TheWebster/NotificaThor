@@ -9,7 +9,8 @@
 \* ************************************************************* */
 
 
-#define _GRAPHICAL_
+#define CONFIG_GRAPHICAL
+
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
 #include <errno.h>
@@ -99,7 +100,7 @@ query_extensions()
 	
 	
 	// SHAPE extension
-	if( _use_xshape ) {
+	if( config_use_xshape ) {
 		qext_reply = xcb_get_extension_data( con, &xcb_shape_id);
 		has_xshape = qext_reply->present;
 		if( !has_xshape )
@@ -193,13 +194,13 @@ prepare_x()
 	
 	/** get visual **/
 	depth_iter = xcb_screen_allowed_depths_iterator( screen);
-	if( _use_argb ) {
+	if( config_use_argb ) {
 		/** get argb visual **/
 		while( depth_iter.rem && depth_iter.data->depth != 32 )
 			xcb_depth_next( &depth_iter);
 		
 		if( depth_iter.rem == 0 ) {
-			_use_argb = 0;
+			config_use_argb = 0;
 			thor_log( LOG_ERR, "32-bit is not allowed on this screen.");
 		}
 		else {
@@ -208,7 +209,7 @@ prepare_x()
 				xcb_visualtype_next( &vt_iter);
 			
 			if( vt_iter.rem == 0 ) {
-				_use_argb = 0;
+				config_use_argb = 0;
 				thor_log( LOG_ERR, "No appropriate 32 bit visual found.");
 			}
 			else {
@@ -239,7 +240,7 @@ prepare_x()
 	note_reply   = xcb_intern_atom_reply( con, note_cookie  , NULL);
 	
 	/** set window attributes **/
-	if( _use_argb ) {
+	if( config_use_argb ) {
 		cw_mask     = XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK|XCB_CW_COLORMAP;
 		cw_value[0] = 0xff000000;
 		cw_value[1] = 0xffffffff;
@@ -302,8 +303,8 @@ parse_default_theme()
 	theme.bar.full.border.operator      = CAIRO_OPERATOR_OVER;
 	
 	/** parse global theme **/
-	if( *_default_theme != '\0') {
-		parse_theme( _default_theme, &theme);
+	if( *config_default_theme != '\0') {
+		parse_theme( config_default_theme, &theme);
 	}
 };
 
@@ -355,11 +356,17 @@ show_win( thor_message *msg)
 			if( !(msg->flags & COM_NO_IMAGE) ) {
 				window->extents[2] = theme.image.x + theme.image.width;
 				window->extents[3] = theme.image.y + theme.image.height;
+				theme.bar.x += theme.padtoborder_x;
+				theme.bar.y += theme.padtoborder_y;
 			}
 			if( !(msg->flags & COM_NO_BAR) ) {
 				use_largest( &window->extents[2], theme.bar.x + theme.bar.width);
 				use_largest( &window->extents[3], theme.bar.y + theme.bar.height);
+				theme.bar.x += theme.padtoborder_x;
+				theme.bar.y += theme.padtoborder_y;
 			}
+			window->extents[2] += 2 * theme.padtoborder_x;
+			window->extents[3] += 2 * theme.padtoborder_y;
 		}
 		/** get default geometry **/
 		else {
@@ -386,37 +393,28 @@ show_win( thor_message *msg)
 		}
 		
 		/** set osd position **/
-		if( _osd_default_x.abs_flag )  // x
-			window->extents[0] = _osd_default_x.coord;
+		if( config_osd_default_x.abs_flag )  // x
+			window->extents[0] = config_osd_default_x.coord;
 		else
 			window->extents[0] = (screen->width_in_pixels  / 2)
 			                   - ( window->extents[2] / 2 )
-			                   + _osd_default_x.coord; // x
+			                   + config_osd_default_x.coord; // x
 		
-		if( _osd_default_y.abs_flag )  // y
-			window->extents[1] = _osd_default_y.coord;
+		if( config_osd_default_y.abs_flag )  // y
+			window->extents[1] = config_osd_default_y.coord;
 		else
 			window->extents[1] = (screen->height_in_pixels / 2)
 			                   - ( window->extents[3] / 2 )
-			                   + _osd_default_y.coord; // y
+			                   + config_osd_default_y.coord; // y
 	}
-	
-	/** map window **/
-	if( sem_trywait( &window->mapped) == -1 ) {
-		xcb_map_window( con, window->win);
-		xcb_flush( con);
-		sem_wait( &window->mapped);
-	}
-	
-	/** configure window x, y, width, height**/
-	xcb_configure_window( con, window->win, 15, window->extents);
 	
 	/** initialize cairo **/
 	surf_win = cairo_xcb_surface_create( con, window->win, visual, window->extents[2], window->extents[3]);
 	surf_buf = cairo_image_surface_create( CAIRO_FORMAT_ARGB32, window->extents[2], window->extents[3]);
 	cr       = cairo_create( surf_buf);
 	
-	image_string = msg->image;
+	if( msg->image_len != 0 )
+		image_string = msg->image;
 	
 	/** draw background to buffering surface**/
 	fallback_surface.surf_color   = 0xff000000;
@@ -483,6 +481,28 @@ show_win( thor_message *msg)
 	
 	cairo_destroy( cr);
 	
+	/** reset dimensions **/
+	if( theme.custom_dimensions ) {
+		if( !(msg->flags & COM_NO_IMAGE) ) {
+			theme.image.x -= theme.padtoborder_x;
+			theme.image.y -= theme.padtoborder_y;
+		}
+		if( !(msg->flags & COM_NO_BAR) ) {
+			theme.bar.x -= theme.padtoborder_x;
+			theme.bar.y -= theme.padtoborder_y;
+		}
+	}
+	
+	/** wait for window to be mapped **/
+	if( sem_trywait( &window->mapped) == -1 ) {
+		xcb_map_window( con, window->win);
+		xcb_flush( con);
+		sem_wait( &window->mapped);
+	}
+	
+	/** configure window x, y, width, height**/
+	xcb_configure_window( con, window->win, 15, window->extents);
+	
 	/** copy buffering surface to window **/
 	cr = cairo_create( surf_win);
 	cairo_set_source_surface( cr, surf_buf, 0, 0);
@@ -507,7 +527,7 @@ show_win( thor_message *msg)
 		cairo_paint( cr);
 		
 		/** use buffering surface as mask **/
-		if( _use_xshape != 2 ) {
+		if( config_use_xshape != 2 ) {
 			cairo_set_operator( cr, CAIRO_OPERATOR_OVER);
 			cairo_mask_surface( cr, surf_buf, 0, 0);
 		}
