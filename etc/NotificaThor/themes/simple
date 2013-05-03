@@ -1,0 +1,44 @@
+/*
+ * A very basic theme.
+ */
+
+pad_to_border_x:  20;
+pad_to_border_y:  20;
+
+BACKGROUND
+{
+	color: #b000;
+}
+
+IMAGE
+{
+	width:  100s;
+	height: 100;
+	
+	picture {
+		png{}
+	}
+}
+
+BAR
+{
+	width: 200;
+	height: 20;
+	empty {
+		border {
+			type:  solid;
+			width: 1;
+			color: #ffffff;
+		}
+	}
+	full {
+		color: #ffffff;
+		
+		border {
+			operator: source;
+			type:     solid;
+			width:    2;
+			color:    #b000;
+		}
+	}
+}

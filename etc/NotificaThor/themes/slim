@@ -1,0 +1,53 @@
+/*
+ * Demonstrates custom positions.
+ */
+
+pad_to_border_x:  15;
+pad_to_border_y:  10;
+
+BACKGROUND
+{
+	radius_topleft:     8;
+	radius_topright:    8;
+	radius_bottomleft:  8;
+	radius_bottomright: 8;
+	
+	color: #e000;
+}
+
+IMAGE
+{
+	x:      0;
+	y:      0;
+	width:  64;
+	height: 64;
+	
+	picture {
+		png{}
+	}
+}
+
+BAR
+{
+	x:      74;   // IMAGE-width + 10
+	y:      28;   // (IMAGE-height / 2) - (BAR-height / 2)
+	width:  250;
+	height: 8;
+	empty {
+		radius_topleft:     2;
+		radius_topright:    2;
+		radius_bottomleft:  2;
+		radius_bottomright: 2;
+		
+		linear {
+			stop: #333 | 0;
+			stop: #444 | 1;
+		}
+	}
+	full {
+		linear {
+			stop: #aaa | 0;
+			stop: #888 | 1;
+		}
+	}
+}

@@ -275,13 +275,6 @@ show_osd( thor_message *msg)
 	if( msg->image_len > 0 )
 		image_string = msg->image;
 	
-	/** wait for window to be mapped **/
-	if( sem_trywait( &osd.mapped) == -1 ) {
-		xcb_map_window( con, osd.win);
-		xcb_flush( con);
-		sem_wait( &osd.mapped);
-	}
-	
 	/** get custom geometry **/
 	cval[2] = 0;
 	cval[3] = theme.padtoborder_y;
@@ -289,11 +282,18 @@ show_osd( thor_message *msg)
 		if( !(msg->flags & COM_NO_IMAGE) ) {
 			cval[2] = theme.image.x + theme.image.width;
 			cval[3] = theme.image.y + theme.image.height;
+			theme.image.x += theme.padtoborder_x;
+			theme.image.y += theme.padtoborder_y;
 		}
 		if( !(msg->flags & COM_NO_BAR) ) {
 			use_largest( &cval[2], theme.bar.x + theme.bar.width);
 			use_largest( &cval[3], theme.bar.y + theme.bar.height);
+			theme.bar.x += theme.padtoborder_x;
+			theme.bar.y += theme.padtoborder_y;
 		}
+		
+		cval[2] += 2 * theme.padtoborder_x;
+		cval[3] += 2 * theme.padtoborder_y;
 	}
 	/** get default geometry **/
 	else {
@@ -330,9 +330,6 @@ show_osd( thor_message *msg)
 	else
 		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + config_osd_default_y.coord; // y
 	
-	
-	/** configure window x, y, width, height**/
-	xcb_configure_window( con, osd.win, 15, cval);
 	/** initialize cairo **/
 	surf_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
 	surf_buf = cairo_image_surface_create( CAIRO_FORMAT_ARGB32, cval[2], cval[3]);
@@ -401,6 +398,28 @@ show_osd( thor_message *msg)
 		
 	}
 	cairo_destroy( cr);
+	
+	/** reset dimensions **/
+	if( theme.custom_dimensions ) {
+		if( !(msg->flags & COM_NO_IMAGE) ) {
+			theme.image.x -= theme.padtoborder_x;
+			theme.image.y -= theme.padtoborder_y;
+		}
+		if( !(msg->flags & COM_NO_BAR) ) {
+			theme.bar.x -= theme.padtoborder_x;
+			theme.bar.y -= theme.padtoborder_y;
+		}
+	}
+	
+	/** wait for window to be mapped **/
+	if( sem_trywait( &osd.mapped) == -1 ) {
+		xcb_map_window( con, osd.win);
+		xcb_flush( con);
+		sem_wait( &osd.mapped);
+	}
+	
+	/** configure window x, y, width, height**/
+	xcb_configure_window( con, osd.win, 15, cval);
 	
 	/** copy buffering surface to window **/
 	cr = cairo_create( surf_osd);

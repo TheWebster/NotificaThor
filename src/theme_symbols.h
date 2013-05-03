@@ -23,6 +23,7 @@ theme_symbol_t operators[] =
 	{ "xor"        , CAIRO_OPERATOR_XOR         },
 	{ "add"        , CAIRO_OPERATOR_ADD         },
 	{ "difference" , CAIRO_OPERATOR_DIFFERENCE  },
+	{ "lighten"    , CAIRO_OPERATOR_LIGHTEN     },
 	{ "darken"     , CAIRO_OPERATOR_DARKEN      },
 	{ "color_dodge", CAIRO_OPERATOR_COLOR_DODGE },
 	{ "color_burn" , CAIRO_OPERATOR_COLOR_BURN  },
