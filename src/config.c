@@ -27,6 +27,8 @@
 
 char          config_default_theme[MAX_THEME_LEN + 1] = {0};
 double        config_osd_default_timeout              = 2;
+double        config_note_default_timeout             = 10;
+int           config_notifications                    = 3;
 coord_t       config_osd_default_x                    = {0, 0};
 coord_t       config_osd_default_y                    = {0, 0};
 int           config_use_argb                         = 1;
@@ -154,15 +156,19 @@ parse_conf()
 			thor_errlog( LOG_ERR, "Opening config file");
 #ifdef VERBOSE
 			thor_log( LOG_DEBUG, "DEFAULT CONFIGURATION:\n"
-								 "\tuse_argb            = %d\n"
-								 "\tuse_xshape          = %d\n"
-								 "\tdefault_theme       = \"%s\"\n"
-								 "\tosd_default_timeout = %f seconds\n"
-								 "\tosd_default_x       = %d, abs = %d\n"
-								 "\tosd_default_y       = %d, abs = %d",
-					  _use_argb, _use_xshape, _default_theme, _osd_default_timeout,
-					  _osd_default_x.coord, _osd_default_x.abs_flag,
-					  _osd_default_y.coord, _osd_default_y.abs_flag);
+								 "\tuse_argb             = %d\n"
+			                     "\tuse_xshape           = %d\n"
+			                     "\tdefault_theme        = \"%s\"\n"
+			                     "\tnote_default_timeout = %f seconds\n"
+			                     "\tosd_default_timeout  = %f seconds\n"
+			                     "\tnotifications        = %d\n"
+			                     "\tosd_default_x        = %d, abs = %d\n"
+			                     "\tosd_default_y        = %d, abs = %d",
+					  config_use_argb, config_use_xshape, config_default_theme,
+					  config_note_default_timeout, config_osd_default_timeout,
+					  config_notifications,
+					  config_osd_default_x.coord, config_osd_default_x.abs_flag,
+					  config_osd_default_y.coord, config_osd_default_y.abs_flag);
 #endif
 			return -1;
 		}
@@ -222,10 +228,21 @@ parse_conf()
 			else
 				thor_log( LOG_ERR, "%s%d - '%s' is not a valid number.", log_msg, line, value);
 		}
+		else if( strcmp( key, "note_default_timeout") == 0 ) {
+			char   *endptr;
+			double to = strtod( value, &endptr);
+			
+			if( *endptr == 0 )
+				config_note_default_timeout = to;
+			else
+				thor_log( LOG_ERR, "%s%d - '%s' is not a valid number.", log_msg, line, value);
+		}
 		else if( strcmp( key, "osd_default_x") == 0 )
 			parse_coord( value, &config_osd_default_x);
 		else if( strcmp( key, "osd_default_y") == 0 )
 			parse_coord( value, &config_osd_default_y);
+		else if( strcmp( key, "notifications") == 0 )
+			parse_number( value, &config_notifications, 0);
 		else {
 			thor_log( LOG_ERR, "%s%d - unknown key '%s'.", log_msg, line, key);
 		}
@@ -234,13 +251,17 @@ parse_conf()
 	
 #ifdef VERBOSE
 	thor_log( LOG_DEBUG, "CONFIGURATION:\n"
-						 "\tuse_argb            = %d\n"
-						 "\tuse_xshape          = %d\n"
-						 "\tdefault_theme       = \"%s\"\n"
-						 "\tosd_default_timeout = %f seconds\n"
-						 "\tosd_default_x       = %d, abs = %d\n"
-						 "\tosd_default_y       = %d, abs = %d",
-			  config_use_argb, config_use_xshape, config_default_theme, config_osd_default_timeout,
+						 "\tuse_argb             = %d\n"
+						 "\tuse_xshape           = %d\n"
+						 "\tdefault_theme        = \"%s\"\n"
+						 "\tnote_default_timeout = %f seconds\n"
+						 "\tosd_default_timeout  = %f seconds\n"
+						 "\tnotifications        = %d\n"
+						 "\tosd_default_x        = %d, abs = %d\n"
+						 "\tosd_default_y        = %d, abs = %d",
+			  config_use_argb, config_use_xshape, config_default_theme,
+			  config_note_default_timeout, config_osd_default_timeout,
+			  config_notifications,
 			  config_osd_default_x.coord, config_osd_default_x.abs_flag,
 			  config_osd_default_y.coord, config_osd_default_y.abs_flag);
 #endif

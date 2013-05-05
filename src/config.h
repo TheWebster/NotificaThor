@@ -20,6 +20,8 @@ typedef struct
 #define MAX_THEME_LEN 64
 extern char   config_default_theme[];
 extern double config_osd_default_timeout;
+extern double config_note_default_timeout;
+extern int    config_notifications;
 
 #ifdef CONFIG_GRAPHICAL
 
