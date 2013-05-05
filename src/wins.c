@@ -225,6 +225,11 @@ prepare_x()
 	note_reply   = xcb_intern_atom_reply( con, note_cookie  , NULL);
 	xcb_change_property( con, XCB_PROP_MODE_REPLACE, osd.win, wmtype_reply->atom,
 	                     XCB_ATOM_ATOM, 32, 1, &note_reply->atom);
+	
+	/** set WM_NAME **/
+	xcb_change_property( con, XCB_PROP_MODE_REPLACE, osd.win, XCB_ATOM_WM_NAME,
+	                     XCB_ATOM_STRING, 8, 12, "NotificaThor");
+	
 	free( wmtype_reply);
 	free( note_reply);
 	
