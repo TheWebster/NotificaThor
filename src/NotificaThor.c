@@ -99,11 +99,12 @@ handle_message( int sockfd)
 	                     "\tBar       = %d/%d\n"
 	                     "\tNo-Image  = %d\n"
 	                     "\tNo-Bar    = %d\n"
-	                     "\tQuery PID = %d",
+	                     "\tQuery PID = %d\n"
+	                     "\tNote      = %d",
 	          msg.timeout, msg.image, msg.bar_part, msg.bar_elements,
 	          (msg.flags & COM_NO_IMAGE) >> 1,
 	          (msg.flags & COM_NO_BAR) >> 2,
-	          msg.flags & COM_QUERY);
+	          msg.flags & COM_QUERY, (msg.flags & COM_NOTE) >> 3);
 #endif
 	
 	/** query pid **/
@@ -114,8 +115,12 @@ handle_message( int sockfd)
 	}
 	
 	/** initializing the popup **/
-	if( msg.timeout == 0 )
-		msg.timeout = config_osd_default_timeout;
+	if( msg.timeout == 0 ) {
+		if( msg.flags & COM_NOTE )
+			msg.timeout = config_note_default_timeout;
+		else
+			msg.timeout = config_osd_default_timeout;
+	}
 		
 	show_win( &msg);
 		

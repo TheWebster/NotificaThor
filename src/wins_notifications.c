@@ -18,10 +18,11 @@
 #include "com.h"
 #include "wins.h"
 #include "wins_private.h"
+#include "config.h"
 
 
-static int      note_stack[N_NOTES];
-static int      next_stack   = 0;
+int *note_stack;
+static int next_stack   = 0;
 
 
 /*
@@ -37,7 +38,7 @@ thor_window_t
 	int i = 0;
 	
 	
-	if( next_stack == N_NOTES ) {
+	if( next_stack == config_notifications ) {
 		return NULL;
 	}
 	

@@ -24,9 +24,9 @@ typedef struct
 } thor_window_t;
 
 
-extern thor_window_t    wins[];
+extern thor_window_t    *wins;
 extern xcb_connection_t *con;
-
+extern int              *note_stack;
 
 thor_window_t *get_note( thor_message *msg);
 void          remove_note( thor_window_t *window);

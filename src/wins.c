@@ -39,7 +39,7 @@
 
 
 xcb_connection_t *con;
-thor_window_t    wins[N_NOTES + 1];
+thor_window_t    *wins;
 
 
 static uint32_t         stack_height = PAD_BORDER;
@@ -64,7 +64,7 @@ timeout_handler( union sigval sv)
 	xcb_flush(con);
 	sem_wait( &wins[sv.sival_int].mapped);
 	
-	if( sv.sival_int < N_NOTES ) {
+	if( sv.sival_int < config_notifications ) {
 		stack_height -= (wins[sv.sival_int].extents[3] + PAD_WINS);
 		remove_note( &wins[sv.sival_int]);
 	}
@@ -129,7 +129,7 @@ xevent_loop()
 			int i;
 						
 			case XCB_MAP_NOTIFY:
-				for( i = 0; i <= N_NOTES; i++ ) {
+				for( i = 0; i <= config_notifications; i++ ) {
 					if( wins[i].win == ((xcb_map_notify_event_t*)event)->window ) {
 						sem_post( &wins[i].mapped);
 						break;
@@ -257,7 +257,9 @@ prepare_x()
 	}
 	
 	/** create wins **/
-	for( i = 0; i <= N_NOTES; i++ ) {
+	wins = (thor_window_t*)malloc( (config_notifications + 1) * sizeof(thor_window_t));
+	note_stack = (int*)malloc( config_notifications * sizeof(int));
+	for( i = 0; i <= config_notifications; i++ ) {
 		wins[i].win = xcb_generate_id( con);
 		xcb_create_window( con, cw_depth, wins[i].win, screen->root,
 		                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
@@ -342,7 +344,7 @@ show_win( thor_message *msg)
 		stack_height      += window->extents[3] + PAD_WINS;
 	}
 	else {
-		window = &wins[N_NOTES];
+		window = &wins[config_notifications];
 		
 		if( (msg->flags & (COM_NO_IMAGE|COM_NO_BAR)) == (COM_NO_IMAGE|COM_NO_BAR) ) {
 			thor_log( LOG_DEBUG, "No elements to be drawn.");
@@ -544,6 +546,7 @@ show_win( thor_message *msg)
 	cairo_surface_destroy( surf_buf);
 	cairo_surface_destroy( surf_win);
 	sem_post( &window->mapped);
+	
 	settimer( window->timer, msg->timeout);
 	
 	return 0;
@@ -564,11 +567,12 @@ cleanup_x()
 	free_image_cache();
 	
 	/** destroy notes **/
-	for( i = 0; i <= N_NOTES; i++ ) {
+	for( i = 0; i <= config_notifications; i++ ) {
 		xcb_destroy_window( con, wins[i].win);
 		sem_destroy( &wins[i].mapped);
 		timer_delete( wins[i].timer);
 	}
+	free( wins);
 	xcb_flush( con);
 	xcb_disconnect( con);
 };
