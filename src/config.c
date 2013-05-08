@@ -31,6 +31,7 @@ coord_t       config_osd_default_x                    = {0, 0};
 coord_t       config_osd_default_y                    = {0, 0};
 int           config_use_argb                         = 1;
 int           config_use_xshape                       = 0;
+char          config_default_font[MAX_FONT_LEN + 1]   = "";
 
 
 #define MAX_LINE_LEN      FILENAME_MAX + 64
@@ -213,6 +214,8 @@ parse_conf()
 		}
 		else if( strcmp( key, "default_theme") == 0 )
 			strncpy( config_default_theme, value, MAX_THEME_LEN);
+		else if( strcmp( key, "default_font") == 0 )
+			strncpy( config_default_font, value, MAX_FONT_LEN);
 		else if( strcmp( key, "osd_default_timeout") == 0 ) {
 			char   *endptr;
 			double to = strtod( value, &endptr);
