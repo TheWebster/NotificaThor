@@ -160,9 +160,9 @@ parse_conf()
 								 "\tosd_default_timeout = %f seconds\n"
 								 "\tosd_default_x       = %d, abs = %d\n"
 								 "\tosd_default_y       = %d, abs = %d",
-					  _use_argb, _use_xshape, _default_theme, _osd_default_timeout,
-					  _osd_default_x.coord, _osd_default_x.abs_flag,
-					  _osd_default_y.coord, _osd_default_y.abs_flag);
+					  config_use_argb, config_use_xshape, config_default_theme, config_osd_default_timeout,
+					  config_osd_default_x.coord, config_osd_default_x.abs_flag,
+					  config_osd_default_y.coord, config_osd_default_y.abs_flag);
 #endif
 			return -1;
 		}
