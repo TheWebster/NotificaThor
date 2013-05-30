@@ -16,6 +16,7 @@
 #include <syslog.h>
 
 #include "config.h"
+#include "text.h"
 #include "theme.h"
 #include "com.h"
 #include "drawing.h"

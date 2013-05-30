@@ -31,7 +31,7 @@ coord_t       config_osd_default_x                    = {0, 0};
 coord_t       config_osd_default_y                    = {0, 0};
 int           config_use_argb                         = 1;
 int           config_use_xshape                       = 0;
-char          config_default_font[MAX_FONT_LEN + 1]   = "";
+char          config_default_font[MAX_FONT_LEN + 1]   = "-12";
 
 
 #define MAX_LINE_LEN      FILENAME_MAX + 64

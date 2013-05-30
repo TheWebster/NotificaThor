@@ -27,6 +27,7 @@
 #include <xcb/shape.h>
 
 #include "com.h"
+#include "text.h"
 #include "theme.h"
 #include "config.h"
 #include "wins.h"
@@ -50,7 +51,7 @@ static thor_window_t    osd;
 static pthread_t        xevents;
 static int              has_xshape = 0;
 
-static thor_theme       theme;
+static thor_theme       theme = {0};
 
 /** config from NotificaThor.c **/
 extern int  xerror;
@@ -269,6 +270,7 @@ show_osd( thor_message *msg)
 	cairo_t         *cr       = NULL;
 	cairo_surface_t *surf_buf = NULL;
 	cairo_surface_t *surf_osd = NULL;
+	text_box_t      *text = prepare_text( "Hello World!", theme.text.font);
 	
 	
 	/** stop here if there is nothing to be done **/
@@ -316,12 +318,22 @@ show_osd( thor_message *msg)
 			use_largest( &cval[2], theme.bar.width);
 			cval[3] += theme.bar.height;
 		}
+		
+		/* text default*/
+		cval[3] += 20;
+		theme.text.y = cval[3];
+		use_largest( &cval[2], (uint32_t)text->ext.width);
+		cval[3] += text->ext.height;
+		
+		
 		cval[2] += 2 * theme.padtoborder_x;
 		cval[3] += theme.padtoborder_y;
 		
 		// positions
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
 		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
+		//text
+		theme.text.x  = (cval[2] / 2) - (text->ext.width / 2);
 	}
 	
 	/** set osd position **/
@@ -402,6 +414,12 @@ show_osd( thor_message *msg)
 		             theme.bar.width, theme.bar.height);
 		
 	}
+	
+	/* draw text to buffering surface */
+	cairo_translate( cr, theme.text.x, theme.text.y);
+	cairo_set_source_rgb( cr, 1, 0, 0);
+	draw_text( cr, text);
+	
 	cairo_destroy( cr);
 	
 	/** reset dimensions **/
