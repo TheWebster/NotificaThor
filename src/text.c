@@ -116,6 +116,15 @@ free_font( thor_font_t *font)
 };
 
 
+/*
+ * Converts a UTF8-string to a set of glyphs depending on selected font and text
+ * formating and returns the results.
+ * 
+ * Parameters: text - The UTF8-string to convert.
+ *             font - The thor_font_t that contains the font.
+ * 
+ * Returns: text_box_t containing the glyphs and dimensions.
+ */
 text_box_t *
 prepare_text( char *text, thor_font_t *font)
 {
@@ -143,6 +152,12 @@ prepare_text( char *text, thor_font_t *font)
 };
 
 
+/*
+ * Draws the glyphs contained in 'text'.
+ * 
+ * Parameters: cr   - Cairo context.
+ *             text - text_box_t containing the glyphs to show.
+ */
 void
 draw_text( cairo_t *cr, text_box_t *text)
 {
