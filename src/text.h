@@ -1,5 +1,5 @@
 
-
+#ifdef TEXT_PRIVATE
 
 struct thor_font
 {
@@ -11,6 +11,7 @@ struct thor_font
 	cairo_font_extents_t ext;
 };
 
+#endif
 
 typedef struct thor_font thor_font_t;
 
