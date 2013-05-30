@@ -318,7 +318,7 @@ show_osd( thor_message *msg)
 			use_largest( &cval[2], theme.bar.width);
 			cval[3] += theme.bar.height;
 		}
-		if( msg->message_len > 0 ) {
+		if( msg->message_len > 1 ) {
 			text = prepare_text( msg->message, theme.text.font);
 			cval[3] += 20;
 			theme.text.y = cval[3];
@@ -332,7 +332,7 @@ show_osd( thor_message *msg)
 		// positions
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
 		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
-		if( msg->message_len > 0 )
+		if( msg->message_len > 1 )
 			theme.text.x  = (cval[2] / 2) - (text->ext.x_advance / 2);
 	}
 	
@@ -415,7 +415,7 @@ show_osd( thor_message *msg)
 		
 	}
 	/** draw text to buffering surface **/
-	if( msg->message_len > 0 ) {
+	if( msg->message_len > 1 ) {
 		cairo_translate( cr, theme.text.x, theme.text.y);
 		cairo_set_source_rgb( cr, 1, 0, 0);
 		draw_text( cr, text);
