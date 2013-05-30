@@ -201,7 +201,7 @@ prepare_x()
 		cw_value[0] = 0x00000000;
 		cw_value[1] = 0xffffffff;
 		cw_value[2] = 1;
-		cw_value[3] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+		cw_value[3] = XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		cw_value[4] = cmap;
 		xcb_create_window( con, 32, osd.win, screen->root,
 	                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
@@ -209,7 +209,7 @@ prepare_x()
 	}
 	else {
 		cw_value[0] = 1;
-		cw_value[1] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+		cw_value[1] = XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		xcb_create_window( con, XCB_COPY_FROM_PARENT, osd.win, screen->root,
 		                   0, 0, 1, 1, 0, XCB_WINDOW_CLASS_COPY_FROM_PARENT,
 		                   visual->visual_id, CW_MASK_RGB, cw_value);
