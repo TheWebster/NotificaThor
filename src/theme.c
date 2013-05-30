@@ -21,6 +21,7 @@
 #include <sys/inotify.h>
 
 #include "com.h"
+#include "text.h"
 #include "theme.h"
 #include "NotificaThor.h"
 #include "logging.h"
@@ -39,6 +40,7 @@
 #define t_border        ((border_t*)target)
 #define t_bar           ((bar_t*)target)
 #define t_image         ((image_t*)target)
+#define t_text          ((text_t*)target)
 
 /** control variables **/
 static unsigned int     line;
@@ -409,6 +411,7 @@ parse_symbol( int *target, char *key, theme_symbol_t *sym_list)
 #define LEVEL_IMAGE   5
 #define LEVEL_PNG     6
 #define LEVEL_RADIAL  7
+#define LEVEL_TEXT    8
 static int
 parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 {
@@ -446,6 +449,10 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 					}
 					else if( strcmp( buffer, "IMAGE") == 0 ) {
 						if( parse_block( ftheme, buffer, LEVEL_IMAGE, (void*)&t_theme->image) == -1 )
+							return -1;
+					}
+					else if( strcmp( buffer, "TEXT") == 0 ) {
+						if( parse_block( ftheme, buffer, LEVEL_TEXT, (void*)&t_theme->text) == -1 )
 							return -1;
 					}
 					else
@@ -509,6 +516,16 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 					case LEVEL_IMAGE:
 						if( strcmp( buffer, "picture") == 0 ) {
 							if( parse_block( ftheme, buffer, LEVEL_SURFACE, (void*)&t_image->picture) == -1 )
+								return -1;
+						}
+						else
+							goto no_block;
+						break;
+				
+				/** TEXT level **/
+					case LEVEL_TEXT:
+						if( strcmp( buffer, "surface") == 0 ) {
+							if( parse_block( ftheme, buffer, LEVEL_SURFACE, (void*)&t_text->surface) == -1 )
 								return -1;
 						}
 						else
@@ -710,6 +727,17 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 						else
 							goto no_key;
 						break;
+					
+					/** TEXT level **/
+					case LEVEL_TEXT:
+						if( strcmp( key, "font") == 0 ) {
+							t_text->font = init_font( value);
+						}
+						else if( strcmp( key, "align") == 0 ) {
+							parse_symbol( &t_text->align, value, align);
+						}
+						else
+							goto no_key;
 				}
 				break;
 			
@@ -790,6 +818,11 @@ parse_theme( char *name, thor_theme *theme)
 	
 	ret = parse_block( ftheme, buffer, LEVEL_THEME, (void*)theme);
 	
+	/** get fallback font **/
+	if( theme->text.font == NULL ) {
+		theme->text.font = init_font( "");
+	}
+	
 	fclose( ftheme);
 	
 	return ret;
@@ -833,6 +866,10 @@ free_theme( thor_theme *theme)
 	
 	/** free image **/
 	free_surface( &theme->image.picture);
+	
+	/** free text surface **/
+	free_surface( &theme->text.surface);
+	free_font( theme->text.font);
 	
 	memset( theme, 0, sizeof(thor_theme));
 };

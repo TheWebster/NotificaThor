@@ -92,6 +92,22 @@ typedef struct
 
 typedef struct
 {
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+	
+	thor_font_t  *font;
+	
+	#define ALIGN_LEFT    0
+	#define ALIGN_CENTER  1
+	#define ALIGN_RIGHT   2
+	int          align;
+	surface_t    surface;
+} text_t;
+
+typedef struct
+{
 	unsigned int  padtoborder_x;
 	unsigned int  padtoborder_y;
 	int           custom_dimensions;
@@ -99,6 +115,7 @@ typedef struct
 	surface_t background;
 	bar_t     bar;
 	image_t   image;
+	text_t    text;
 } thor_theme;
 
 

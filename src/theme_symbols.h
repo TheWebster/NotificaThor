@@ -53,3 +53,11 @@ theme_symbol_t fill_rules[] =
 	{ "full" , FILL_FULL_RELATIVE  },
 	{ {0}    , 0                   }
 };
+
+theme_symbol_t align[] =
+{
+	{ "left"  , ALIGN_LEFT   },
+	{ "center", ALIGN_CENTER },
+	{ "right" , ALIGN_RIGHT  },
+	{ {0}     , 0            }
+};
