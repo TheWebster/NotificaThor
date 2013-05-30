@@ -22,7 +22,7 @@ clean: clean-bin clean-doc
 ############################
 # Building the Application #
 ############################
-CFLAGS    = -Wall -D 'VERSION="$(VER)"'
+CFLAGS    = -Wall -D 'VERSION="$(VER)"' -I /usr/include/freetype2
 
 ifneq (,$(findstring debug, $(MAKECMDGOALS)))
 CFLAGS   += -g
@@ -38,8 +38,8 @@ ifneq (,$(findstring verbose, $(MAKECMDGOALS)))
 CFLAGS   += -D 'VERBOSE'
 endif
 	
-THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread
-_THOR_OBJ = com.o config.o drawing.o logging.o NotificaThor.o theme.o utils.o wins.o images.o
+THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread -lfontconfig
+_THOR_OBJ = com.o config.o drawing.o logging.o NotificaThor.o theme.o utils.o wins.o images.o text.o
 THOR_OBJ  = $(addprefix obj/, $(_THOR_OBJ))
 
 BIN_PATH  = $(prefix)/usr/
