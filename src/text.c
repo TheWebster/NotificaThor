@@ -150,10 +150,11 @@ draw_text( cairo_t *cr, text_box_t *text)
 	
 	
 	for( i = 0; i < text->nfrags; i++) {
-		cairo_set_scaled_font( cr, text->frag[0].style);
-		cairo_show_glyphs( cr, text->frag[0].glyphs,
-						   text->frag[0].nglyphs);
-		text->frag[0].nglyphs = 0;
+		cairo_set_scaled_font( cr, text->frag[i].style);
+		cairo_show_glyphs( cr, text->frag[i].glyphs,
+						   text->frag[i].nglyphs);
+		text->frag[i].nglyphs = 0;
+		cairo_glyph_free( text->frag[i].glyphs);
 	}
 	
 	free( text->frag);
