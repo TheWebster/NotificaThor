@@ -270,7 +270,7 @@ show_osd( thor_message *msg)
 	cairo_t         *cr       = NULL;
 	cairo_surface_t *surf_buf = NULL;
 	cairo_surface_t *surf_osd = NULL;
-	text_box_t      *text = prepare_text( "Hello World!", theme.text.font);
+	text_box_t      *text;
 	
 	
 	/** stop here if there is nothing to be done **/
@@ -318,13 +318,13 @@ show_osd( thor_message *msg)
 			use_largest( &cval[2], theme.bar.width);
 			cval[3] += theme.bar.height;
 		}
-		
-		/* text default*/
-		cval[3] += 20;
-		theme.text.y = cval[3];
-		use_largest( &cval[2], (uint32_t)text->ext.width);
-		cval[3] += text->ext.height;
-		
+		if( msg->message_len > 0 ) {
+			text = prepare_text( msg->message, theme.text.font);
+			cval[3] += 20;
+			theme.text.y = cval[3];
+			use_largest( &cval[2], (uint32_t)text->ext.x_advance);
+			cval[3] += text->ext.height;
+		}
 		
 		cval[2] += 2 * theme.padtoborder_x;
 		cval[3] += theme.padtoborder_y;
@@ -332,8 +332,8 @@ show_osd( thor_message *msg)
 		// positions
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
 		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
-		//text
-		theme.text.x  = (cval[2] / 2) - (text->ext.width / 2);
+		if( msg->message_len > 0 )
+			theme.text.x  = (cval[2] / 2) - (text->ext.x_advance / 2);
 	}
 	
 	/** set osd position **/
@@ -414,11 +414,12 @@ show_osd( thor_message *msg)
 		             theme.bar.width, theme.bar.height);
 		
 	}
-	
-	/* draw text to buffering surface */
-	cairo_translate( cr, theme.text.x, theme.text.y);
-	cairo_set_source_rgb( cr, 1, 0, 0);
-	draw_text( cr, text);
+	/** draw text to buffering surface **/
+	if( msg->message_len > 0 ) {
+		cairo_translate( cr, theme.text.x, theme.text.y);
+		cairo_set_source_rgb( cr, 1, 0, 0);
+		draw_text( cr, text);
+	}
 	
 	cairo_destroy( cr);
 	

@@ -22,6 +22,8 @@ typedef struct
 	double       timeout;
 	ssize_t      image_len;
 	char         *image;
+	ssize_t      message_len;
+	char         *message;
 	unsigned int bar_elements;
 	unsigned int bar_part;
 } thor_message;

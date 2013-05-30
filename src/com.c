@@ -88,7 +88,7 @@ receive_message( int fd, thor_message *msg)
 	if( read_chksize( fd, msg, sizeof(thor_message)) == -1 )
 		return -1;
 		
-	len = msg->image_len;
+	len = msg->image_len + msg->message_len;
 	if( len > 0 ) {
 		if( write_chksize( fd, &ack, 1) == -1 )
 			return -1;
@@ -99,6 +99,8 @@ receive_message( int fd, thor_message *msg)
 			goto err;
 		
 		msg->image = buffer;
+		if( msg->message_len > 0 )
+			msg->message = buffer + msg->image_len;
 	}
 	
 	return 0;
@@ -117,7 +119,7 @@ receive_message( int fd, thor_message *msg)
 void
 free_message( thor_message *msg)
 {
-	if( msg->image_len > 0)
+	if( msg->image_len > 0 || msg->message_len)
 		free( msg->image);
 	
 	return;
