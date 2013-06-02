@@ -136,17 +136,17 @@ free_font( thor_font_t *font)
 #define STYLE_MASK         STYLE_BOLD_ITALIC
 #define STYLE_UNDERLINED   (1 << 3)
 static void
-add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
+add_fragment( text_line *line, thor_font_t *font, double *x, double *y,
               char *string, int len, int style)
 {
 	if( len > 0 ) {
-		int                  index = box->nfrags++;
+		int                  index = line->nfrags++;
 		text_fragment        *frag;
 		cairo_text_extents_t ext;
 		
 		
-		_realloc( box->frag, text_fragment, box->nfrags);
-		frag = &box->frag[index];
+		_realloc( line->frag, text_fragment, line->nfrags);
+		frag = &line->frag[index];
 		memset( frag, 0, sizeof(text_fragment));
 		
 		if( (style & STYLE_MASK) == STYLE_REGULAR ) 
@@ -172,6 +172,19 @@ add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
 };
 
 
+static text_line *
+add_text_line( text_box_t *box)
+{
+	int index = box->nlines++;
+	
+	
+	_realloc( box->line, text_line, box->nlines);
+	memset( &box->line[index], 0, sizeof(text_line));
+	
+	return &box->line[index];
+};
+
+
 /*
  * Converts a UTF8-string to a set of glyphs depending on selected font and text
  * formating and returns the results.
@@ -189,19 +202,25 @@ prepare_text( char *text, thor_font_t *font)
 	double     x      = 0;
 	double     y      = font->ext.ascent;
 	text_box_t *res   = (text_box_t*)malloc( sizeof(text_box_t));
+	text_line  *line;
 	
 	
 	
 	memset( res, 0, sizeof(text_box_t));
 	res->font = font;
-	
+	line = add_text_line( res);
 	
 	while( *ptr != '\0' ) {
 		/** formating elements **/
 		if( *ptr == '\n' ) {
-			add_fragment( res, font, &x, &y, text, ptr - text, style);
+			add_fragment( line, font, &x, &y, text, ptr - text, style);
 			text       = ptr + 1;
-			res->width = ( x > res->width ) ? x : res->width;
+			
+			res->width  = ( x > res->width ) ? x : res->width;
+			line->width = x;
+			
+			line = add_text_line( res);
+			
 			x          = 0;
 			y         += font->ext.height;
 		}
@@ -209,48 +228,48 @@ prepare_text( char *text, thor_font_t *font)
 		/** XML markup elements **/
 		if( *ptr == '<' ) {
 			if( strncmp( ptr, "<b>", 3) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 3;
 				style |= STYLE_BOLD;
 			}
 			else if( strncmp( ptr, "<i>", 3) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 3;
 				style |= STYLE_ITALIC;
 			}
 			else if( strncmp( ptr, "<u>", 3) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 3;
 				style |= STYLE_UNDERLINED;
 			}
 			else if( strncmp( ptr, "</b>", 4) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 4;
 				style &= ~STYLE_BOLD;
 			}
 			else if( strncmp( ptr, "</i>", 4) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 4;
 				style &= ~STYLE_ITALIC;
 			}
 			else if( strncmp( ptr, "</u>", 4) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 4;
 				style &= ~STYLE_UNDERLINED;
 			}
 			/** unimplemented markup to ignore **/
 			else if( strncmp( ptr, "<a href=", 8) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 8;
 				while( *text++ != '>' );
 			}
 			else if( strncmp( ptr, "<img src=", 9) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 9;
 				while( *text++ != '>' );
 			}
 			else if( strncmp( ptr, "</a>", 4) == 0 ) {
-				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 4;
 			}
 		}
@@ -258,7 +277,9 @@ prepare_text( char *text, thor_font_t *font)
 		ptr++;
 	}
 	
-	add_fragment( res, font, &x, &y, text, ptr - text, style);
+	add_fragment( line, font, &x, &y, text, ptr - text, style);
+	
+	line->width = x;
 	res->width  = ( x > res->width ) ? x : res->width;
 	res->height = y + font->ext.height - font->ext.ascent;
 	
@@ -273,29 +294,49 @@ prepare_text( char *text, thor_font_t *font)
  *             text - text_box_t containing the glyphs to show.
  */
 void
-draw_text( cairo_t *cr, text_box_t *text)
+draw_text( cairo_t *cr, text_box_t *text, double x, double y, int align_lines)
 {
-	int i;
+	int l, f;
 	
 	
-	for( i = 0; i < text->nfrags; i++) {
-		text_fragment *frag = &text->frag[i];
+	if( align_lines == ALIGN_LEFT )
+		cairo_translate( cr, x, y);
+	
+	for( l = 0; l < text->nlines; l++ ) {
+		text_line *line = &text->line[l];
 		
 		
-		cairo_set_scaled_font( cr, frag->style);
-		cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
-		
-		if( text->frag[i].underlined ) {
-			cairo_set_line_width( cr, text->font->ul_width);
-			cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y + text->font->ul_pos);
-			cairo_line_to( cr, frag->to_x, frag->to_y + text->font->ul_pos);
-			cairo_stroke( cr);
+		if( align_lines == ALIGN_CENTER ) {
+			cairo_identity_matrix( cr);
+			cairo_translate( cr, x + (text->width / 2) - (line->width / 2), y);
+		}
+		else if( align_lines == ALIGN_RIGHT ) {
+			cairo_identity_matrix( cr);
+			cairo_translate( cr, x + text->width - line->width, y);
 		}
 		
-		frag->nglyphs = 0;
-		cairo_glyph_free( text->frag[i].glyphs);
+		for( f = 0; f < line->nfrags; f++ ) {
+			text_fragment *frag = &line->frag[f];
+			
+			
+			cairo_set_scaled_font( cr, frag->style);
+			cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
+			
+			if( frag->underlined ) {
+				cairo_set_line_width( cr, text->font->ul_width);
+				cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y + text->font->ul_pos);
+				cairo_line_to( cr, frag->to_x, frag->to_y + text->font->ul_pos);
+				cairo_stroke( cr);
+			}
+			
+			frag->nglyphs = 0;
+			cairo_glyph_free( frag->glyphs);
+		}
+		
+		free( line->frag);
 	}
 	
-	free( text->frag);
+	free( text->line);
+	
 	free( text);
 };

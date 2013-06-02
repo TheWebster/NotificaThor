@@ -333,11 +333,11 @@ show_osd( thor_message *msg)
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
 		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
 		if( msg->message_len > 1 ) {
-			if( theme.text.align_text == ALIGN_TEXT_LEFT )
+			if( theme.text.align_text == ALIGN_LEFT )
 				theme.text.x = theme.padtoborder_x;
-			else if( theme.text.align_text == ALIGN_TEXT_RIGHT )
+			else if( theme.text.align_text == ALIGN_RIGHT )
 				theme.text.x = cval[2] - theme.padtoborder_x - text->width;
-			else if( theme.text.align_text == ALIGN_TEXT_CENTER )
+			else if( theme.text.align_text == ALIGN_CENTER )
 				theme.text.x = (cval[2] / 2) - (text->width / 2);
 		}
 	}
@@ -422,9 +422,8 @@ show_osd( thor_message *msg)
 	}
 	/** draw text to buffering surface **/
 	if( msg->message_len > 1 ) {
-		cairo_translate( cr, theme.text.x, theme.text.y);
 		cairo_set_source_rgb( cr, 1, 0, 0);
-		draw_text( cr, text);
+		draw_text( cr, text, theme.text.x, theme.text.y, theme.text.align_lines);
 	}
 	
 	cairo_destroy( cr);

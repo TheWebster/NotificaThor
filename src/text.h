@@ -31,17 +31,26 @@ typedef struct
 
 typedef struct
 {
-	thor_font_t   *font;
-	
 	text_fragment *frag;
 	int           nfrags;
 	
 	double               width;
-	double               height;
+} text_line;
+
+
+typedef struct
+{
+	thor_font_t   *font;
+	
+	text_line     *line;
+	int           nlines;
+	
+	double        width;
+	double        height;
 } text_box_t;
 
 
 thor_font_t *init_font( char *font_name);
 void        free_font( thor_font_t *font);
 text_box_t  *prepare_text( char *text, thor_font_t *font);
-void        draw_text( cairo_t *cr, text_box_t *text);
+void        draw_text( cairo_t *cr, text_box_t *text, double x, double y, int align_lines);

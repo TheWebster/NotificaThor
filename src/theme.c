@@ -736,6 +736,9 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 						else if( strcmp( key, "align-text") == 0 ) {
 							parse_symbol( &t_text->align_text, value, align);
 						}
+						else if( strcmp( key, "align-lines") == 0 ) {
+							parse_symbol( &t_text->align_lines, value, align);
+						}
 						else
 							goto no_key;
 				}
