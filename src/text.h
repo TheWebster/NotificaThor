@@ -18,6 +18,10 @@ typedef struct thor_font thor_font_t;
 typedef struct
 {
 	cairo_scaled_font_t *style;
+	int                 underlined;
+	double              to_x;
+	double              to_y;
+	
 	cairo_glyph_t       *glyphs;
 	int                 nglyphs;
 } text_fragment;
@@ -25,8 +29,8 @@ typedef struct
 
 typedef struct
 {
-	text_fragment        *frag;
-	int                  nfrags;
+	text_fragment *frag;
+	int           nfrags;
 	
 	double               width;
 	double               height;

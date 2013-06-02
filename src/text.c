@@ -129,6 +129,8 @@ free_font( thor_font_t *font)
 #define STYLE_BOLD         (1 << 1)
 #define STYLE_ITALIC       (1 << 2)
 #define STYLE_BOLD_ITALIC  (STYLE_BOLD|STYLE_ITALIC)
+#define STYLE_MASK         STYLE_BOLD_ITALIC
+#define STYLE_UNDERLINED   (1 << 3)
 static void
 add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
               char *string, int len, int style)
@@ -143,13 +145,13 @@ add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
 		frag = &box->frag[index];
 		memset( frag, 0, sizeof(text_fragment));
 		
-		if( style == STYLE_REGULAR ) 
+		if( (style & STYLE_MASK) == STYLE_REGULAR ) 
 			frag->style = font->regular;
-		else if( style == STYLE_BOLD )
+		else if( (style & STYLE_MASK) == STYLE_BOLD )
 			frag->style = font->bold;
-		else if( style == STYLE_ITALIC )
+		else if( (style & STYLE_MASK) == STYLE_ITALIC )
 			frag->style = font->italic;
-		else if( style == STYLE_BOLD_ITALIC )
+		else if( (style & STYLE_MASK) == STYLE_BOLD_ITALIC )
 			frag->style = font->bold_italic;
 		
 		cairo_scaled_font_text_to_glyphs( frag->style, *x, *y, string, len,
@@ -157,9 +159,14 @@ add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
 										  NULL, NULL, NULL);
 		cairo_scaled_font_glyph_extents( frag->style, frag->glyphs,
 		                                 frag->nglyphs, &ext);
-		*x += ext.x_advance; 
+		*x += ext.x_advance;
+		
+		frag->underlined = style & ~STYLE_MASK;
+		frag->to_x = *x;
+		frag->to_y = *y;
 	}
 };
+
 
 /*
  * Converts a UTF8-string to a set of glyphs depending on selected font and text
@@ -173,11 +180,11 @@ add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
 text_box_t *
 prepare_text( char *text, thor_font_t *font)
 {
-	char       *ptr  = text;
-	int        style = STYLE_REGULAR;
-	double     x     = 0;
-	double     y     = font->ext.ascent;
-	text_box_t *res  = (text_box_t*)malloc( sizeof(text_box_t));
+	char       *ptr   = text;
+	int        style  = STYLE_REGULAR;
+	double     x      = 0;
+	double     y      = font->ext.ascent;
+	text_box_t *res   = (text_box_t*)malloc( sizeof(text_box_t));
 	
 	
 	
@@ -206,15 +213,25 @@ prepare_text( char *text, thor_font_t *font)
 				text   = ptr + 3;
 				style |= STYLE_ITALIC;
 			}
-			else if( strncmp( ptr, "</b>", 3) == 0 ) {
+			else if( strncmp( ptr, "<u>", 3) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 3;
+				style |= STYLE_UNDERLINED;
+			}
+			else if( strncmp( ptr, "</b>", 4) == 0 ) {
 				add_fragment( res, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 4;
 				style &= ~STYLE_BOLD;
 			}
-			else if( strncmp( ptr, "</i>", 3) == 0 ) {
+			else if( strncmp( ptr, "</i>", 4) == 0 ) {
 				add_fragment( res, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 4;
 				style &= ~STYLE_ITALIC;
+			}
+			else if( strncmp( ptr, "</u>", 4) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 4;
+				style &= ~STYLE_UNDERLINED;
 			}
 		}
 		
@@ -242,10 +259,20 @@ draw_text( cairo_t *cr, text_box_t *text)
 	
 	
 	for( i = 0; i < text->nfrags; i++) {
-		cairo_set_scaled_font( cr, text->frag[i].style);
-		cairo_show_glyphs( cr, text->frag[i].glyphs,
-						   text->frag[i].nglyphs);
-		text->frag[i].nglyphs = 0;
+		text_fragment *frag = &text->frag[i];
+		
+		
+		cairo_set_scaled_font( cr, frag->style);
+		cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
+		
+		if( text->frag[i].underlined ) {
+			cairo_set_line_width( cr, 2);
+			cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y);
+			cairo_line_to( cr, frag->to_x, frag->to_y);
+			cairo_stroke( cr);
+		}
+		
+		frag->nglyphs = 0;
 		cairo_glyph_free( text->frag[i].glyphs);
 	}
 	
