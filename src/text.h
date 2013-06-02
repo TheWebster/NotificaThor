@@ -53,4 +53,6 @@ typedef struct
 thor_font_t *init_font( char *font_name);
 void        free_font( thor_font_t *font);
 text_box_t  *prepare_text( char *text, thor_font_t *font);
-void        draw_text( cairo_t *cr, text_box_t *text, double x, double y, int align_lines);
+
+typedef struct text_t_ text_t;
+void        draw_text( cairo_t *cr, text_box_t *text, text_t *text_theme);

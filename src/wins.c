@@ -9,7 +9,6 @@
 \* ************************************************************* */
 
 
-#define CONFIG_GRAPHICAL
 
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
@@ -26,6 +25,7 @@
 #include <xcb/xproto.h>
 #include <xcb/shape.h>
 
+#define CONFIG_GRAPHICAL
 #include "com.h"
 #include "text.h"
 #include "theme.h"
@@ -422,8 +422,9 @@ show_osd( thor_message *msg)
 	}
 	/** draw text to buffering surface **/
 	if( msg->message_len > 1 ) {
-		cairo_set_source_rgb( cr, 1, 0, 0);
-		draw_text( cr, text, theme.text.x, theme.text.y, theme.text.align_lines);
+		fallback_surface.surf_color = 0xffffffff;
+		fallback_surface.surf_op    = CAIRO_OPERATOR_DIFFERENCE;
+		draw_text( cr, text, &theme.text);
 	}
 	
 	cairo_destroy( cr);

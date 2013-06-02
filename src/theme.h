@@ -90,7 +90,7 @@ typedef struct
 } image_t;
 
 
-typedef struct
+typedef struct text_t_
 {
 	unsigned int x;
 	unsigned int y;

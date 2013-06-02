@@ -190,6 +190,39 @@ bordermap( surface_t *surface, double x0, double y0, double x1, double y1,
 
 
 /*
+ * Fills cairo's current path with the layers of a surface.
+ * 
+ * Parameters: cr      - Cairo context.
+ *             surface - surface_t containing the layers.
+ */
+void
+set_layer( cairo_t *cr, layer_t *layer)
+{
+	cairo_pattern_t *pat;
+	cairo_status_t  status;
+	
+	
+	/** empty png pattern **/
+	if( layer->pattern == NULL ) {
+		if( !image_string || !*image_string )
+			return;
+		
+		pat    = get_pattern_for_png( image_string);
+		if( (status = cairo_pattern_status( pat)) != CAIRO_STATUS_SUCCESS ) {
+			thor_log( LOG_ERR, "Reading '%s': %s.", image_string, cairo_status_to_string( status));
+			return;
+		}
+		
+		image_string += strlen( image_string) + 1;
+	}
+	else
+		pat = layer->pattern;
+	
+	cairo_set_source( cr, pat);
+	cairo_set_operator( cr, layer->operator);
+};
+	
+/*
  * Draws a surface.
  * 
  * Parameters: cr            - Cairo context.
@@ -202,7 +235,7 @@ void
 draw_surface( cairo_t *cr, surface_t *surface, int control,
               double x, double y, double width, double height)
 {
-	int i;
+	int i = -1;
 	
 	
 	cairo_rounded_rectangle( cr, x, y, width, height, surface->rad_tl, surface->rad_tr,
@@ -215,37 +248,18 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 		cairo_scale( cr, width, height);
 	}
 	
-	if( surface->nlayers ) {
-		for( i = 0; i < surface->nlayers; i++ ) {
-			cairo_pattern_t *pat;
-			cairo_status_t  status;
-			
-			if( surface->layer[i].pattern == NULL ) {
-				if( !image_string || !*image_string )
-					continue;
-				
-				pat    = get_pattern_for_png( image_string);
-				if( (status = cairo_pattern_status( pat)) != CAIRO_STATUS_SUCCESS ) {
-					thor_log( LOG_ERR, "Reading '%s': %s.", image_string, cairo_status_to_string( status));
-					continue;
-				}
-				
-				image_string += strlen( image_string) + 1;
-			}
-			else
-				pat = surface->layer[i].pattern;
-			
-			cairo_set_source( cr, pat);
-			cairo_set_operator( cr, surface->layer[i].operator);
-			cairo_fill_preserve( cr);
-		}
-	}
-	else {    //fallback
+	if( surface->nlayers == 0 ) {
 		cairo_set_source_rgba( cr, cairo_rgba( fallback_surface.surf_color));
 		cairo_set_operator( cr, fallback_surface.surf_op);
 		cairo_fill_preserve( cr);
 	}
-	
+	else {
+		for( i = 0; i < surface->nlayers; i++ ) {
+			set_layer( cr, &surface->layer[i]);
+			cairo_fill_preserve( cr);
+		}
+	}
+			
 	cairo_clip( cr);
 	if( control & CONTROL_SAVE_MATRIX )
 		cairo_save( cr);

@@ -8,9 +8,11 @@
 
 #define CONFIG_GRAPHICAL
 #define TEXT_PRIVATE
+#define THEME_PRIVATE
 #include "text.h"
 #include "theme.h"
 #include "config.h"
+#include "drawing.h"
 #include "NotificaThor.h"
 
 
@@ -172,6 +174,14 @@ add_fragment( text_line *line, thor_font_t *font, double *x, double *y,
 };
 
 
+/*
+ * Adds a text_line struct to a text_box and returns a pointer to 
+ * the newly allocated struct.
+ * 
+ * Parameters: box - text_box_t to which the line should be added.
+ * 
+ * Returns: A Pointer to the new element.
+ */
 static text_line *
 add_text_line( text_box_t *box)
 {
@@ -198,6 +208,7 @@ text_box_t *
 prepare_text( char *text, thor_font_t *font)
 {
 	char       *ptr   = text;
+	int        escape = 0;
 	int        style  = STYLE_REGULAR;
 	double     x      = 0;
 	double     y      = font->ext.ascent;
@@ -205,15 +216,31 @@ prepare_text( char *text, thor_font_t *font)
 	text_line  *line;
 	
 	
-	
 	memset( res, 0, sizeof(text_box_t));
 	res->font = font;
 	line = add_text_line( res);
 	
 	while( *ptr != '\0' ) {
+		/** escape sequences **/
+		if( *ptr == '\\' ) {
+			if( escape ) {
+				add_fragment( line, font, &x, &y, text, ptr - text - 1, style);
+				text = ptr;
+				escape = 0;
+			}
+			else {
+				escape = 1;
+			}
+		}
+		
 		/** formating elements **/
-		if( *ptr == '\n' ) {
-			add_fragment( line, font, &x, &y, text, ptr - text, style);
+		else if( *ptr == '\n' && escape ) {
+			add_fragment( line, font, &x, &y, text, ptr - text - 1, style);
+			text = ptr + 1;
+			escape = 0;
+		}
+		else if( *ptr == '\n' || (*ptr == 'n' && escape) ) {
+			add_fragment( line, font, &x, &y, text, ptr - text - escape, style);
 			text       = ptr + 1;
 			
 			res->width  = ( x > res->width ) ? x : res->width;
@@ -221,13 +248,18 @@ prepare_text( char *text, thor_font_t *font)
 			
 			line = add_text_line( res);
 			
-			x          = 0;
-			y         += font->ext.height;
+			x  = 0;
+			y += font->ext.height;
+			escape = 0;
 		}
-		
 		/** XML markup elements **/
-		if( *ptr == '<' ) {
-			if( strncmp( ptr, "<b>", 3) == 0 ) {
+		else if( *ptr == '<' ) {
+			if( escape ) {
+				add_fragment( line, font, &x, &y, text, ptr - text - 1, style);
+				text = ptr;
+				escape = 0;
+			}
+			else if( strncmp( ptr, "<b>", 3) == 0 ) {
 				add_fragment( line, font, &x, &y, text, ptr - text, style);
 				text   = ptr + 3;
 				style |= STYLE_BOLD;
@@ -273,6 +305,8 @@ prepare_text( char *text, thor_font_t *font)
 				text   = ptr + 4;
 			}
 		}
+		else if( escape )
+			escape = 0;
 		
 		ptr++;
 	}
@@ -294,39 +328,69 @@ prepare_text( char *text, thor_font_t *font)
  *             text - text_box_t containing the glyphs to show.
  */
 void
-draw_text( cairo_t *cr, text_box_t *text, double x, double y, int align_lines)
+draw_text( cairo_t *cr, text_box_t *text, text_t *text_theme)
 {
 	int l, f;
+	cairo_matrix_t source_m, font_m;
 	
 	
-	if( align_lines == ALIGN_LEFT )
-		cairo_translate( cr, x, y);
+	cairo_matrix_init_scale( &source_m, text->width, text_theme->font->ext.height);
+	
+	if( text_theme->align_lines == ALIGN_LEFT ) {
+		cairo_translate( cr, text_theme->x, text_theme->y);
+		cairo_get_matrix( cr, &font_m);
+	}
 	
 	for( l = 0; l < text->nlines; l++ ) {
-		text_line *line = &text->line[l];
+		text_line      *line = &text->line[l];
 		
 		
-		if( align_lines == ALIGN_CENTER ) {
+		/** aligning **/
+		if( text_theme->align_lines == ALIGN_CENTER ) {
 			cairo_identity_matrix( cr);
-			cairo_translate( cr, x + (text->width / 2) - (line->width / 2), y);
+			cairo_translate( cr, text_theme->x + (text->width / 2) - (line->width / 2), text_theme->y);
+			cairo_get_matrix( cr, &font_m);
 		}
-		else if( align_lines == ALIGN_RIGHT ) {
+		else if( text_theme->align_lines == ALIGN_RIGHT ) {
 			cairo_identity_matrix( cr);
-			cairo_translate( cr, x + text->width - line->width, y);
+			cairo_translate( cr, text_theme->x + text->width - line->width, text_theme->y);
+			cairo_get_matrix( cr, &font_m);
 		}
 		
 		for( f = 0; f < line->nfrags; f++ ) {
+			int           i;
 			text_fragment *frag = &line->frag[f];
 			
 			
 			cairo_set_scaled_font( cr, frag->style);
-			cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
 			
 			if( frag->underlined ) {
-				cairo_set_line_width( cr, text->font->ul_width);
 				cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y + text->font->ul_pos);
 				cairo_line_to( cr, frag->to_x, frag->to_y + text->font->ul_pos);
+				cairo_set_line_width( cr, text->font->ul_width);
+			}
+			
+			/** fallback **/
+			if( text_theme->surface.nlayers == 0 ) {
+				cairo_translate( cr, 0, l * text_theme->font->ext.height);
+				cairo_transform( cr, &source_m);
+				cairo_set_source_rgba( cr, cairo_rgba( fallback_surface.surf_color));
+				cairo_set_operator( cr, fallback_surface.surf_op);
+				cairo_set_matrix( cr, &font_m);
+				cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
 				cairo_stroke( cr);
+			}
+			else {
+				for( i = 0; i < text_theme->surface.nlayers; i++ ) {
+					cairo_translate( cr, 0, l * text_theme->font->ext.height);
+					cairo_transform( cr, &source_m);
+					set_layer( cr, &text_theme->surface.layer[i]);
+					cairo_set_matrix( cr, &font_m);
+					cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
+					cairo_stroke_preserve( cr);
+				}
+				
+				cairo_new_path( cr);
 			}
 			
 			frag->nglyphs = 0;
