@@ -322,8 +322,8 @@ show_osd( thor_message *msg)
 			text = prepare_text( msg->message, theme.text.font);
 			cval[3] += 20;
 			theme.text.y = cval[3];
-			use_largest( &cval[2], (uint32_t)text->ext.x_advance);
-			cval[3] += text->ext.height;
+			use_largest( &cval[2], (uint32_t)text->width);
+			cval[3] += text->height;
 		}
 		
 		cval[2] += 2 * theme.padtoborder_x;
@@ -333,7 +333,7 @@ show_osd( thor_message *msg)
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
 		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
 		if( msg->message_len > 1 )
-			theme.text.x  = (cval[2] / 2) - (text->ext.x_advance / 2);
+			theme.text.x  = (cval[2] / 2) - (text->width / 2);
 	}
 	
 	/** set osd position **/

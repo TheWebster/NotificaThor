@@ -10,6 +10,7 @@
 #include "text.h"
 #include "theme.h"
 #include "config.h"
+#include "NotificaThor.h"
 
 
 /*
@@ -66,20 +67,16 @@ init_font( char *font_name)
 	cairo_font_face_destroy( face);
 	
 	// create bold face
-	FcPatternAddInteger( fc_italic, FC_WEIGHT, FC_WEIGHT_BOLD);
 	face         = cairo_ft_font_face_create_for_pattern( fc_bold);
 	res->bold    = cairo_scaled_font_create( face, &font_matrix, &user_matrix, fopts);
 	cairo_font_face_destroy( face);
 	
 	// create italic face
-	FcPatternAddInteger( fc_italic, FC_SLANT, FC_SLANT_ITALIC);
 	face         = cairo_ft_font_face_create_for_pattern( fc_italic);
 	res->italic  = cairo_scaled_font_create( face, &font_matrix, &user_matrix, fopts);
 	cairo_font_face_destroy( face);
 	
 	// create bold-italic face
-	FcPatternAddInteger( fc_bitalic, FC_WEIGHT, FC_WEIGHT_BOLD);
-	FcPatternAddInteger( fc_bitalic, FC_SLANT , FC_SLANT_ITALIC);
 	face              = cairo_ft_font_face_create_for_pattern( fc_bitalic);
 	res->bold_italic  = cairo_scaled_font_create( face, &font_matrix, &user_matrix, fopts);
 	cairo_font_face_destroy( face);
@@ -117,6 +114,54 @@ free_font( thor_font_t *font)
 
 
 /*
+ * Allocates a new frag-element and set its glyph array and its font and increases cursor
+ * position if the string length is > 0.
+ * 
+ * Parameters: box    - text_box_t to add the element to.
+ *             font   - thor_font_t which contains all font styles.
+ *             x, y   - Pointers to the current position of a virtual cursor.
+ *                      The x value is automatically increased.
+ *             string - A pointer to an UTF8 string.
+ *             len    - Length of string.
+ *             style  - Flags that indicate the font to be used.
+ */
+#define STYLE_REGULAR      0
+#define STYLE_BOLD         (1 << 1)
+#define STYLE_ITALIC       (1 << 2)
+#define STYLE_BOLD_ITALIC  (STYLE_BOLD|STYLE_ITALIC)
+static void
+add_fragment( text_box_t *box, thor_font_t *font, double *x, double *y,
+              char *string, int len, int style)
+{
+	if( len > 0 ) {
+		int                  index = box->nfrags++;
+		text_fragment        *frag;
+		cairo_text_extents_t ext;
+		
+		
+		_realloc( box->frag, text_fragment, box->nfrags);
+		frag = &box->frag[index];
+		memset( frag, 0, sizeof(text_fragment));
+		
+		if( style == STYLE_REGULAR ) 
+			frag->style = font->regular;
+		else if( style == STYLE_BOLD )
+			frag->style = font->bold;
+		else if( style == STYLE_ITALIC )
+			frag->style = font->italic;
+		else if( style == STYLE_BOLD_ITALIC )
+			frag->style = font->bold_italic;
+		
+		cairo_scaled_font_text_to_glyphs( frag->style, *x, *y, string, len,
+										  &frag->glyphs, &frag->nglyphs,
+										  NULL, NULL, NULL);
+		cairo_scaled_font_glyph_extents( frag->style, frag->glyphs,
+		                                 frag->nglyphs, &ext);
+		*x += ext.x_advance; 
+	}
+};
+
+/*
  * Converts a UTF8-string to a set of glyphs depending on selected font and text
  * formating and returns the results.
  * 
@@ -128,25 +173,57 @@ free_font( thor_font_t *font)
 text_box_t *
 prepare_text( char *text, thor_font_t *font)
 {
-	text_box_t *res = (text_box_t*)malloc( sizeof(text_box_t));
-	int        len  = strlen( text);
+	char       *ptr  = text;
+	int        style = STYLE_REGULAR;
+	double     x     = 0;
+	double     y     = font->ext.ascent;
+	text_box_t *res  = (text_box_t*)malloc( sizeof(text_box_t));
+	
 	
 	
 	memset( res, 0, sizeof(text_box_t));
 	
-	res->nfrags = 1;
-	res->frag = (text_fragment*)malloc( sizeof(text_fragment));
-	memset( res->frag, 0, sizeof(text_fragment));
 	
-	res->frag[0].style = font->bold_italic;
+	while( *ptr != '\0' ) {
+		/** formating elements **/
+		if( *ptr == '\n' ) {
+			add_fragment( res, font, &x, &y, text, ptr - text, style);
+			text       = ptr + 1;
+			res->width = ( x > res->width ) ? x : res->width;
+			x          = 0;
+			y         += font->ext.height;
+		}
+		
+		/** XML markup elements **/
+		if( *ptr == '<' ) {
+			if( strncmp( ptr, "<b>", 3) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 3;
+				style |= STYLE_BOLD;
+			}
+			else if( strncmp( ptr, "<i>", 3) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 3;
+				style |= STYLE_ITALIC;
+			}
+			else if( strncmp( ptr, "</b>", 3) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 4;
+				style &= ~STYLE_BOLD;
+			}
+			else if( strncmp( ptr, "</i>", 3) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 4;
+				style &= ~STYLE_ITALIC;
+			}
+		}
+		
+		ptr++;
+	}
 	
-	cairo_scaled_font_text_to_glyphs( res->frag[0].style,
-	                                  0, font->ext.height, text, len,
-	                                  &res->frag[0].glyphs,
-	                                  &res->frag[0].nglyphs,
-	                                  NULL, NULL, NULL);
-	cairo_scaled_font_text_extents( res->frag[0].style, text, &res->ext);
-	
+	add_fragment( res, font, &x, &y, text, ptr - text, style);
+	res->width  = ( x > res->width ) ? x : res->width;
+	res->height = y + font->ext.height - font->ext.ascent;
 	
 	return res;
 };

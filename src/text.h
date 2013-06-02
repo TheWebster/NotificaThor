@@ -28,7 +28,8 @@ typedef struct
 	text_fragment        *frag;
 	int                  nfrags;
 	
-	cairo_text_extents_t ext;
+	double               width;
+	double               height;
 } text_box_t;
 
 
