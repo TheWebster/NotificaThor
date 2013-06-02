@@ -332,8 +332,14 @@ show_osd( thor_message *msg)
 		// positions
 		theme.image.x = (cval[2] / 2) - (theme.image.width / 2);
 		theme.bar.x   = (cval[2] / 2) - (theme.bar.width / 2);
-		if( msg->message_len > 1 )
-			theme.text.x  = (cval[2] / 2) - (text->width / 2);
+		if( msg->message_len > 1 ) {
+			if( theme.text.align_text == ALIGN_TEXT_LEFT )
+				theme.text.x = theme.padtoborder_x;
+			else if( theme.text.align_text == ALIGN_TEXT_RIGHT )
+				theme.text.x = cval[2] - theme.padtoborder_x - text->width;
+			else if( theme.text.align_text == ALIGN_TEXT_CENTER )
+				theme.text.x = (cval[2] / 2) - (text->width / 2);
+		}
 	}
 	
 	/** set osd position **/

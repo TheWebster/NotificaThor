@@ -99,10 +99,11 @@ typedef struct
 	
 	thor_font_t  *font;
 	
-	#define ALIGN_LEFT    0
-	#define ALIGN_CENTER  1
-	#define ALIGN_RIGHT   2
-	int          align;
+	#define ALIGN_TEXT_CENTER  0
+	#define ALIGN_TEXT_LEFT    1
+	#define ALIGN_TEXT_RIGHT   2
+	int          align_text;
+	
 	surface_t    surface;
 } text_t;
 

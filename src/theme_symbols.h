@@ -56,8 +56,8 @@ theme_symbol_t fill_rules[] =
 
 theme_symbol_t align[] =
 {
-	{ "left"  , ALIGN_LEFT   },
-	{ "center", ALIGN_CENTER },
-	{ "right" , ALIGN_RIGHT  },
-	{ {0}     , 0            }
+	{ "left"  , ALIGN_TEXT_LEFT   },
+	{ "center", ALIGN_TEXT_CENTER },
+	{ "right" , ALIGN_TEXT_RIGHT  },
+	{ {0}     , 0                 }
 };
