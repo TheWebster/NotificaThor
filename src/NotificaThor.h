@@ -34,7 +34,6 @@
 
 
 /******** utils ********/
-void use_largest( uint32_t *dest, uint32_t src);
 void go_up( char *string);
 char* cpycat(char* dst,char* src);
 int _parse_number( char *string, int *number, int allow_neg, char *logmsg, int line);

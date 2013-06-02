@@ -222,7 +222,7 @@ event_loop()
 		FD_SET( sockfd, &set);
 		if( inofd != -1 ) {
 			FD_SET( inofd, &set);
-			use_largest( (uint32_t*)&maxfd, (uint32_t)inofd);
+			maxfd = ( inofd > maxfd ) ? inofd : maxfd;
 		}
 		
 		

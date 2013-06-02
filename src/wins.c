@@ -270,7 +270,7 @@ show_osd( thor_message *msg)
 	cairo_t         *cr       = NULL;
 	cairo_surface_t *surf_buf = NULL;
 	cairo_surface_t *surf_osd = NULL;
-	text_box_t      *text;
+	text_box_t      *text     = NULL;
 	
 	
 	/** stop here if there is nothing to be done **/
@@ -293,8 +293,10 @@ show_osd( thor_message *msg)
 			theme.image.y += theme.padtoborder_y;
 		}
 		if( !(msg->flags & COM_NO_BAR) ) {
-			use_largest( &cval[2], theme.bar.x + theme.bar.width);
-			use_largest( &cval[3], theme.bar.y + theme.bar.height);
+			cval[2] = ( theme.bar.x + theme.bar.width > cval[2] ) ? theme.bar.x + theme.bar.width
+			                                                      : cval[2];
+			cval[3] = ( theme.bar.y + theme.bar.height > cval[3] ) ? theme.bar.y + theme.bar.height
+			                                                       : cval[3];
 			theme.bar.x += theme.padtoborder_x;
 			theme.bar.y += theme.padtoborder_y;
 		}
@@ -315,15 +317,15 @@ show_osd( thor_message *msg)
 				cval[3] += 20;
 			
 			theme.bar.y = cval[3];
-			use_largest( &cval[2], theme.bar.width);
-			cval[3] += theme.bar.height;
+			cval[2]     = ( theme.bar.width > cval[2] ) ? theme.bar.width : cval[2];
+			cval[3]    += theme.bar.height;
 		}
 		if( msg->message_len > 1 ) {
-			text = prepare_text( msg->message, theme.text.font);
-			cval[3] += 20;
+			text         = prepare_text( msg->message, theme.text.font);
+			cval[3]     += 20;
 			theme.text.y = cval[3];
-			use_largest( &cval[2], (uint32_t)text->width);
-			cval[3] += text->height;
+			cval[2]      = ( text->width > cval[2] ) ? text->width : cval[2];
+			cval[3]     += text->height;
 		}
 		
 		cval[2] += 2 * theme.padtoborder_x;
