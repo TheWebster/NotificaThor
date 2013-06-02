@@ -3,6 +3,7 @@
 #include <cairo/cairo.h>
 #include <cairo/cairo-ft.h>
 #include <fontconfig/fontconfig.h>
+#include <math.h>
 #include <stdint.h>
 
 #define CONFIG_GRAPHICAL
@@ -24,7 +25,7 @@
 thor_font_t *
 init_font( char *font_name)
 {
-	double               size;
+	double               size, pixel_size;
 	cairo_font_face_t    *face;
 	cairo_matrix_t       font_matrix, user_matrix;
 	cairo_font_options_t *fopts = cairo_font_options_create();
@@ -56,9 +57,10 @@ init_font( char *font_name)
 	FcDefaultSubstitute( fc_italic);
 	FcDefaultSubstitute( fc_bitalic);
 	
-	FcPatternGetDouble( fc_regular, FC_PIXEL_SIZE, 0, &size);
+	FcPatternGetDouble( fc_regular, FC_PIXEL_SIZE, 0, &pixel_size);
+	FcPatternGetDouble( fc_regular, FC_SIZE, 0, &size);
 	
-	cairo_matrix_init_scale( &font_matrix, size, size);
+	cairo_matrix_init_scale( &font_matrix, pixel_size, pixel_size);
 	cairo_matrix_init_identity( &user_matrix);
 	
 	// create regular face
@@ -82,6 +84,8 @@ init_font( char *font_name)
 	cairo_font_face_destroy( face);
 	
 	cairo_scaled_font_extents( res->regular, &res->ext);
+	res->ul_width = round( res->ext.descent / 4);
+	res->ul_pos   = round( res->ext.descent / 2) - res->ul_width / 2;
 	
 	// clean
 	FcPatternDestroy( fc_regular);
@@ -189,6 +193,7 @@ prepare_text( char *text, thor_font_t *font)
 	
 	
 	memset( res, 0, sizeof(text_box_t));
+	res->font = font;
 	
 	
 	while( *ptr != '\0' ) {
@@ -233,6 +238,21 @@ prepare_text( char *text, thor_font_t *font)
 				text   = ptr + 4;
 				style &= ~STYLE_UNDERLINED;
 			}
+			/** unimplemented markup to ignore **/
+			else if( strncmp( ptr, "<a href=", 8) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 8;
+				while( *text++ != '>' );
+			}
+			else if( strncmp( ptr, "<img src=", 9) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 9;
+				while( *text++ != '>' );
+			}
+			else if( strncmp( ptr, "</a>", 4) == 0 ) {
+				add_fragment( res, font, &x, &y, text, ptr - text, style);
+				text   = ptr + 4;
+			}
 		}
 		
 		ptr++;
@@ -266,9 +286,9 @@ draw_text( cairo_t *cr, text_box_t *text)
 		cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
 		
 		if( text->frag[i].underlined ) {
-			cairo_set_line_width( cr, 2);
-			cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y);
-			cairo_line_to( cr, frag->to_x, frag->to_y);
+			cairo_set_line_width( cr, text->font->ul_width);
+			cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y + text->font->ul_pos);
+			cairo_line_to( cr, frag->to_x, frag->to_y + text->font->ul_pos);
 			cairo_stroke( cr);
 		}
 		

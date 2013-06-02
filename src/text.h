@@ -9,6 +9,8 @@ struct thor_font
 	cairo_scaled_font_t  *bold_italic;
 	
 	cairo_font_extents_t ext;
+	double               ul_pos;
+	double               ul_width;
 };
 
 #endif
@@ -29,6 +31,8 @@ typedef struct
 
 typedef struct
 {
+	thor_font_t   *font;
+	
 	text_fragment *frag;
 	int           nfrags;
 	

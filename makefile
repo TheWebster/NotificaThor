@@ -38,7 +38,7 @@ ifneq (,$(findstring verbose, $(MAKECMDGOALS)))
 CFLAGS   += -D 'VERBOSE'
 endif
 	
-THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread -lfontconfig
+THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread -lfontconfig -lm
 _THOR_OBJ = com.o config.o drawing.o logging.o NotificaThor.o theme.o utils.o wins.o images.o text.o
 THOR_OBJ  = $(addprefix obj/, $(_THOR_OBJ))
 
@@ -70,7 +70,7 @@ bin/notificathor: $(THOR_OBJ) $(filter-out $(wildcard bin/), bin/)
 
 # Link thor-cli
 bin/thor-cli: obj/thor-cli.o $(filter-out $(wildcard bin/), bin/)
-	@echo "Building $@..."
+	@echo "Building $@...  "
 	@$(CC) $< -o $@
 
 # Compile sources, create dependency files
