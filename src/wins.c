@@ -300,6 +300,15 @@ show_osd( thor_message *msg)
 			theme.bar.x += theme.padtoborder_x;
 			theme.bar.y += theme.padtoborder_y;
 		}
+		if( msg->message_len > 1 ) {
+			text = prepare_text( msg->message, theme.text.font);
+			cval[2] = ( theme.text.x + text->width  > cval[2] ) ? theme.text.x + text->width
+			                                                    : cval[2];
+			cval[3] = ( theme.text.y + text->height > cval[3] ) ? theme.text.y + text->height
+			                                                    : cval[3];
+			theme.text.x += theme.padtoborder_x;
+			theme.text.y += theme.padtoborder_y;
+		}
 		
 		cval[2] += 2 * theme.padtoborder_x;
 		cval[3] += 2 * theme.padtoborder_y;
@@ -440,6 +449,10 @@ show_osd( thor_message *msg)
 		if( !(msg->flags & COM_NO_BAR) ) {
 			theme.bar.x -= theme.padtoborder_x;
 			theme.bar.y -= theme.padtoborder_y;
+		}
+		if( msg->message_len > 1 ) {
+			theme.text.x -= theme.padtoborder_x;
+			theme.text.y -= theme.padtoborder_y;
 		}
 	}
 	

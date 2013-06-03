@@ -730,7 +730,19 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 					
 					/** TEXT level **/
 					case LEVEL_TEXT:
-						if( strcmp( key, "font") == 0 ) {
+						if( strcmp( key, "x") == 0 ) {
+							if( parse_number( value, (int*)&t_text->x, 0) == -1 )
+								return -1;
+							
+							*custom_dim = 1;
+						}
+						else if( strcmp( key, "y") == 0 ) {
+							if( parse_number( value, (int*)&t_text->y, 0) == -1 )
+								return -1;
+							
+							*custom_dim = 1;
+						}
+						else if( strcmp( key, "font") == 0 ) {
 							t_text->font = init_font( value);
 						}
 						else if( strcmp( key, "align-text") == 0 ) {
