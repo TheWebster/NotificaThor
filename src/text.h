@@ -25,16 +25,22 @@ typedef struct
 	double              to_y;
 	
 	cairo_glyph_t       *glyphs;
+	cairo_glyph_t       *free_glyph;
 	int                 nglyphs;
 } text_fragment;
 
 
 typedef struct
 {
-	text_fragment *frag;
 	int           nfrags;
+} text_word;
+
+
+typedef struct
+{
+	int    nwords;
 	
-	double               width;
+	double width;
 } text_line;
 
 
@@ -45,6 +51,12 @@ typedef struct
 	text_line     *line;
 	int           nlines;
 	
+	text_word     *word;
+	int           nwords;
+	
+	text_fragment *frag;
+	int           nfrags;
+	
 	double        width;
 	double        height;
 } text_box_t;
@@ -52,7 +64,7 @@ typedef struct
 
 thor_font_t *init_font( char *font_name);
 void        free_font( thor_font_t *font);
-text_box_t  *prepare_text( char *text, thor_font_t *font);
+text_box_t  *prepare_text( char *text, thor_font_t *font, double fwidth);
 
 typedef struct text_t_ text_t;
 void        draw_text( cairo_t *cr, text_box_t *text, text_t *text_theme);

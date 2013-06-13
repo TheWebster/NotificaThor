@@ -301,7 +301,8 @@ show_osd( thor_message *msg)
 			theme.bar.y += theme.padtoborder_y;
 		}
 		if( msg->message_len > 1 ) {
-			text = prepare_text( msg->message, theme.text.font);
+			text = prepare_text( msg->message, theme.text.font, theme.text.width);
+			
 			cval[2] = ( theme.text.x + text->width  > cval[2] ) ? theme.text.x + text->width
 			                                                    : cval[2];
 			cval[3] = ( theme.text.y + text->height > cval[3] ) ? theme.text.y + text->height
@@ -330,7 +331,7 @@ show_osd( thor_message *msg)
 			cval[3]    += theme.bar.height;
 		}
 		if( msg->message_len > 1 ) {
-			text         = prepare_text( msg->message, theme.text.font);
+			text         = prepare_text( msg->message, theme.text.font, theme.text.width);
 			cval[3]     += 20;
 			theme.text.y = cval[3];
 			cval[2]      = ( text->width > cval[2] ) ? text->width : cval[2];

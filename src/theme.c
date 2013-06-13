@@ -742,6 +742,10 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 							
 							*custom_dim = 1;
 						}
+						else if( strcmp( key, "width") == 0 ) {
+							if( parse_number( value, (int*)&t_text->width, 0) == -1 )
+								return -1;
+						}
 						else if( strcmp( key, "font") == 0 ) {
 							t_text->font = init_font( value);
 						}
