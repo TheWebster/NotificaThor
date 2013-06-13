@@ -1,4 +1,4 @@
-.TH NotificaThor-themes 5 "29 March 2013" "%%VERSION%%"
+.TH NotificaThor-themes 5 "13 June 2013" "%%VERSION%%"
 
 
 
@@ -172,9 +172,9 @@ Specifies the properties of the displayed image.
 .BI x: " number" ;
 .TP
 .BI y: " number" ;
-The position of the image in pixels. If they are never used, all the elemnts will
+The position of the image in pixels. If they are never used, all the elements will
 be positioned reasonably, but as soon as any
-.BR x " or " y "property is used, NotificaThor will use the values specified in the themefile."
+.BR x " or " y " property is used, NotificaThor will use the values specified in the themefile."
 .TP
 .BI width: " number" ;
 .TP
@@ -191,9 +191,9 @@ Specifies the properties of the bar.
 .BI x: " number" ;
 .TP
 .BI y: " number" ;
-The position of the image in pixels. If they are never used, all the elemnts will
+The position of the bar in pixels. If they are never used, all the elements will
 be positioned reasonably, but as soon as any
-.BR x " or " y "property is used, NotificaThor will use the values specified in the themefile."
+.BR x " or " y " property is used, NotificaThor will use the values specified in the themefile."
 .TP
 .BI width: " number" ;
 .TP
@@ -216,6 +216,39 @@ The surface of the empty part.
 .BI "Surface " full{}
 The surface of the filled part.
 
+.SS TEXT{}
+Specifies text-properties.
+.TP
+.BI x: " number" ;
+.TP
+.BI y: " number" ;
+The position of the image in pixels. If they are never used, all the elements will
+be positioned reasonably, but as soon as any
+.BR x " or " y " property is used, NotificaThor will use the values specified in the themefile."
+.TP
+.BI width: " number" ;
+The width of the textbox. If set to zero or unset, the width will be calculated from the text
+dimension. If set the specified width is enforced by adding linebreaks to the text.
+.TP
+.BI font: " fontconfig-string" ;
+A fontconfig-compatible string describing the font to use. It is combined with the
+.BR default_font " property in"
+.IR rc.conf ". See"
+.BR NotificaThor "(1)."
+.TP
+.BI align-text: "left|center|right"
+Specifies where to align the textbox if it is smaller than the popup. Only shows effect
+when not specifying custom positions.
+.br
+.RI "Defaults to " center .
+.TP
+.BI align-lines: "left|center|right"
+Specifies where to align the lines inside the textbox.
+.br
+.RI "Defaults to " center .
+.TP
+.BI "Surface " surface{}
+The surface to fill each line of text with.
 
 
 .SH COLORS

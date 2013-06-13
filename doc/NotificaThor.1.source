@@ -1,4 +1,4 @@
-.TH NotificaThor 1 "27 March 2013" "%%VERSION%%"
+.TH NotificaThor 1 "13 June 2013" "%%VERSION%%"
 
 
 .SH NAME
@@ -68,6 +68,17 @@ When 'true' is specified, only fully transparent areas will be click-through.
 .TP
 .BI default_theme= theme-name
 Specifies a filename in the themes directory to use as the default theme.
+
+.TP
+.BI default_font= fontconfig-string
+A fontconfig compatible string describing the default font to use.
+.br
+.RB "For example: " "DejaVu Sans-12:Condensed"
+.br
+Specifying different slants or weights might render the HTML-markup elements useless, it is
+strongly suggested to use these for text emphasis.
+.br
+.RB "Defaults to " "\(dq-12\(dq" " which chooses the default font of size 12."
 
 .TP
 .BI osd_default_x= [:]coordinate
