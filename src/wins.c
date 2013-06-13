@@ -274,7 +274,7 @@ show_osd( thor_message *msg)
 	
 	
 	/** stop here if there is nothing to be done **/
-	if( (msg->flags & (COM_NO_IMAGE|COM_NO_BAR)) == (COM_NO_IMAGE|COM_NO_BAR) ) {
+	if( msg->flags & COM_NO_IMAGE && msg->flags & COM_NO_BAR && msg->message_len < 2 ) {
 		thor_log( LOG_DEBUG, "No elements to be drawn.");
 		return -1;
 	}
@@ -332,7 +332,8 @@ show_osd( thor_message *msg)
 		}
 		if( msg->message_len > 1 ) {
 			text         = prepare_text( msg->message, theme.text.font, theme.text.width);
-			cval[3]     += 20;
+			if( cval[3] > theme.padtoborder_y )
+				cval[3] += 20;
 			theme.text.y = cval[3];
 			cval[2]      = ( text->width > cval[2] ) ? text->width : cval[2];
 			cval[3]     += text->height;
