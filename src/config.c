@@ -127,6 +127,26 @@ parse_coord( char *string, coord_t *target)
 };
 
 
+#ifdef VERBOSE
+#pragma message( "VERBOSE mode defining 'print_config()'...")
+/*
+ * Prints configuration.
+ */
+static void
+print_config()
+{
+	thor_log( LOG_DEBUG, "  use_argb            = %d", config_use_argb);
+	thor_log( LOG_DEBUG, "  use_xshape          = %d", config_use_xshape);
+	thor_log( LOG_DEBUG, "  default_theme       = \"%s\"", config_default_theme);
+	thor_log( LOG_DEBUG, "  default_font        = \"%s\"", config_default_font);
+	thor_log( LOG_DEBUG, "  osd_default_timeout = %f", config_osd_default_timeout);
+	thor_log( LOG_DEBUG, "  osd_default_x       = %d, abs = %d", config_osd_default_x.coord,
+	                                                             config_osd_default_x.abs_flag);
+	thor_log( LOG_DEBUG, "  osd_default_y       = %d, abs = %d", config_osd_default_y.coord,
+	                                                             config_osd_default_y.abs_flag);
+};
+#endif
+
 /*
  * Parses the config file.
  * 
@@ -155,16 +175,8 @@ parse_conf()
 		if( (fconf = fopen( config_file, "r")) == NULL ) {
 			thor_errlog( LOG_ERR, "Opening config file");
 #ifdef VERBOSE
-			thor_log( LOG_DEBUG, "DEFAULT CONFIGURATION:\n"
-								 "\tuse_argb            = %d\n"
-								 "\tuse_xshape          = %d\n"
-								 "\tdefault_theme       = \"%s\"\n"
-								 "\tosd_default_timeout = %f seconds\n"
-								 "\tosd_default_x       = %d, abs = %d\n"
-								 "\tosd_default_y       = %d, abs = %d",
-					  config_use_argb, config_use_xshape, config_default_theme, config_osd_default_timeout,
-					  config_osd_default_x.coord, config_osd_default_x.abs_flag,
-					  config_osd_default_y.coord, config_osd_default_y.abs_flag);
+			thor_log( LOG_DEBUG, "DEFAULT CONFIGURATION:");
+			print_config();
 #endif
 			return -1;
 		}
@@ -241,16 +253,8 @@ parse_conf()
 	fclose( fconf);
 	
 #ifdef VERBOSE
-	thor_log( LOG_DEBUG, "CONFIGURATION:\n"
-						 "\tuse_argb            = %d\n"
-						 "\tuse_xshape          = %d\n"
-						 "\tdefault_theme       = \"%s\"\n"
-						 "\tosd_default_timeout = %f seconds\n"
-						 "\tosd_default_x       = %d, abs = %d\n"
-						 "\tosd_default_y       = %d, abs = %d",
-			  config_use_argb, config_use_xshape, config_default_theme, config_osd_default_timeout,
-			  config_osd_default_x.coord, config_osd_default_x.abs_flag,
-			  config_osd_default_y.coord, config_osd_default_y.abs_flag);
+	thor_log( LOG_DEBUG, "CONFIGURATION:");
+	print_config();
 #endif
 	          
 	return 0;

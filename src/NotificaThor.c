@@ -59,6 +59,38 @@ settimer( timer_t timer, double seconds)
 };
 
 
+#ifdef VERBOSE
+#pragma message( "VERBOSE mode defining 'print_message()'...")
+static void
+print_message( thor_message *msg)
+{
+	char *str_read = NULL;
+	int  i;
+	
+	
+	if( msg->image_len ) {
+		str_read = (char*)malloc( msg->image_len);
+		strcpy( str_read, msg->image);
+		for( i = 0; i < msg->image_len - 1; i++ ) {
+			if( str_read[i] == '\0')
+				str_read[i] = ':';
+		}
+	}
+	
+	thor_log( LOG_DEBUG, "  Query PID = %d", msg->flags & COM_QUERY);
+	thor_log( LOG_DEBUG, "  No Image  = %d", (msg->flags & COM_NO_IMAGE) >> 1);
+	thor_log( LOG_DEBUG, "  No Bar    = %d", (msg->flags & COM_NO_BAR) >> 2);
+	thor_log( LOG_DEBUG, "  Timeout   = %f", msg->timeout);
+	thor_log( LOG_DEBUG, "  Images    = \"%s\"", str_read);
+	thor_log( LOG_DEBUG, "  Message   = \"%s\"", msg->message);
+	thor_log( LOG_DEBUG, "  Bar       = %d/%d", msg->bar_part, msg->bar_elements);
+	
+	if( msg->image_len )
+		free( str_read);
+};
+#endif
+
+
 /*
  * Handles a message on the NotificaThor-socket
  * 
@@ -112,17 +144,8 @@ handle_message( int sockfd, timer_t timer)
 	}
 	
 #ifdef VERBOSE
-	thor_log( LOG_DEBUG, "Received message over socket:\n"
-	                     "\tTimeout   = %f\n"
-	                     "\tImage     = '%s'\n"
-	                     "\tBar       = %d/%d\n"
-	                     "\tNo-Image  = %d\n"
-	                     "\tNo-Bar    = %d\n"
-	                     "\tQuery PID = %d",
-	          msg.timeout, msg.image, msg.bar_part, msg.bar_elements,
-	          (msg.flags & COM_NO_IMAGE) >> 1,
-	          (msg.flags & COM_NO_BAR) >> 2,
-	          msg.flags & COM_QUERY);
+	thor_log( LOG_DEBUG, "Received message over socket:");
+	print_message( &msg);
 #endif
 	
 	/** query pid **/

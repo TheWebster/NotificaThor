@@ -271,6 +271,22 @@ parse_default_theme()
 };
 
 
+#ifdef VERBOSE
+#pragma message( "VERBOSE mode defining 'print_coords()'...")
+static void
+print_coords( uint32_t *cval, thor_theme *theme, text_box_t *text)
+{
+	thor_log( LOG_DEBUG, "  Window x|y: %u|%u", cval[0], cval[1]);
+	thor_log( LOG_DEBUG, "  Window w|h: %u|%u", cval[2], cval[3]);
+	thor_log( LOG_DEBUG, "  Image x|y:  %u|%u", theme->image.x, theme->image.y);
+	thor_log( LOG_DEBUG, "  Image w|h:  %u|%u", theme->image.width, theme->image.height);
+	thor_log( LOG_DEBUG, "  Bar x|y:    %u|%u", theme->bar.x, theme->bar.y);
+	thor_log( LOG_DEBUG, "  Bar w|h:    %u|%u", theme->bar.width, theme->bar.height);
+	thor_log( LOG_DEBUG, "  Text x|y:   %u|%u", theme->text.x, theme->text.y);
+	thor_log( LOG_DEBUG, "  Text w|h:   %f|%f", text->width, text->height);
+};
+#endif
+
 /*
  * Maps and draws OSD.
  * 
@@ -328,6 +344,10 @@ show_osd( thor_message *msg)
 		
 		cval[2] += 2 * theme.padtoborder_x;
 		cval[3] += 2 * theme.padtoborder_y;
+		
+		#ifdef VERBOSE
+		thor_log( LOG_DEBUG, "Using custom dimensions:");
+		#endif
 	}
 	/** get default geometry **/
 	else {
@@ -368,6 +388,10 @@ show_osd( thor_message *msg)
 			else if( theme.text.align_text == ALIGN_CENTER )
 				theme.text.x = (cval[2] / 2) - (text->width / 2);
 		}
+		
+		#ifdef VERBOSE
+		thor_log( LOG_DEBUG, "Using default dimensions:");
+		#endif
 	}
 	
 	/** set osd position **/
@@ -380,6 +404,10 @@ show_osd( thor_message *msg)
 		cval[1] = config_osd_default_y.coord;
 	else
 		cval[1] = (screen->height_in_pixels / 2) - ( cval[3] / 2 ) + config_osd_default_y.coord; // y
+	
+	#ifdef VERBOSE
+	print_coords( cval, &theme, text);
+	#endif
 	
 	/** initialize cairo **/
 	surf_osd = cairo_xcb_surface_create( con, osd.win, visual, cval[2], cval[3]);
