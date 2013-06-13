@@ -253,6 +253,17 @@ parse_default_theme()
 	if( *config_default_theme != '\0') {
 		parse_theme( config_default_theme, &theme);
 	}
+	/** fallback **/
+	else {
+		theme.padtoborder_x = 15;
+		theme.padtoborder_y = 15;
+		
+		theme.bar.width     = 200;
+		theme.bar.height    = 20;
+		
+		theme.image.width   = 100;
+		theme.image.height  = 100;
+	}
 	
 	if( theme.text.font == NULL ) {
 		theme.text.font = init_font( "");
