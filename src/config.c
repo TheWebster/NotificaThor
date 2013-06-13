@@ -25,13 +25,14 @@
 #include "logging.h"
 
 
+#define CONFIG_DEFAULT_FONT  "-12"
 char          config_default_theme[MAX_THEME_LEN + 1] = {0};
 double        config_osd_default_timeout              = 2;
 coord_t       config_osd_default_x                    = {0, 0};
 coord_t       config_osd_default_y                    = {0, 0};
 int           config_use_argb                         = 1;
 int           config_use_xshape                       = 0;
-char          config_default_font[MAX_FONT_LEN + 1]   = "-12";
+char          config_default_font[MAX_FONT_LEN + 1]   = CONFIG_DEFAULT_FONT;
 
 
 #define MAX_LINE_LEN      FILENAME_MAX + 64
@@ -177,6 +178,10 @@ parse_conf()
 		if( inotify_add_watch( inofd, config_file, IN_MODIFY|IN_DELETE_SELF|IN_MOVE_SELF|IN_CLOSE_WRITE) == -1 )
 			thor_ferrlog( LOG_ERR, "Installing Inotify watch on '%s'", config_file);
 	}
+	
+	/** default values **/
+	*config_default_theme = '\0';
+	strcpy( config_default_font, CONFIG_DEFAULT_FONT);
 	
 	while( (c = fgetline( fconf, buffer)) != -1 )
 	{

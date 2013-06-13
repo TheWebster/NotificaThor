@@ -837,11 +837,6 @@ parse_theme( char *name, thor_theme *theme)
 	
 	ret = parse_block( ftheme, buffer, LEVEL_THEME, (void*)theme);
 	
-	/** get fallback font **/
-	if( theme->text.font == NULL ) {
-		theme->text.font = init_font( "");
-	}
-	
 	fclose( ftheme);
 	
 	return ret;

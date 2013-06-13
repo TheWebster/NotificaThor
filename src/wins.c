@@ -253,6 +253,10 @@ parse_default_theme()
 	if( *config_default_theme != '\0') {
 		parse_theme( config_default_theme, &theme);
 	}
+	
+	if( theme.text.font == NULL ) {
+		theme.text.font = init_font( "");
+	}
 };
 
 
