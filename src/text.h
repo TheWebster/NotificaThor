@@ -22,9 +22,7 @@ typedef struct thor_font thor_font_t;
 typedef struct
 {
 	cairo_scaled_font_t *style;
-	int                 underlined;
-	double              to_x;
-	double              to_y;
+	double              underlined;    // basically contains x_advance value. Set to zero for no line.
 	
 	cairo_glyph_t       *glyphs;
 	int                 nglyphs;

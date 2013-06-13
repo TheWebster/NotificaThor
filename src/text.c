@@ -270,8 +270,8 @@ add_fragment( text_box_t *box, text_line **line, text_word **word, int style,
 	frag->free_glyph = frag->glyphs;
 	
 	
-	if( frag->underlined )
-		frag->to_x = ext.x_advance;
+	if( style & STYLE_UNDERLINED )
+			frag->underlined = ext.x_advance;
 	
 	if( fwidth > 0 ) {
 		/** split line at word boundary **/
@@ -318,8 +318,9 @@ add_fragment( text_box_t *box, text_line **line, text_word **word, int style,
 			frag->style   = hlp_style;
 			frag->underlined = hlp_ul;
 			move_frag( frag, -*x, box->font->ext.height);
-			if( frag->underlined )
-				frag->to_x = ext.x_advance;
+			
+			if( style & STYLE_UNDERLINED )
+				frag->underlined = ext.x_advance;
 			
 			cairo_scaled_font_glyph_extents( frag->style, frag->glyphs, frag->nglyphs, &ext);
 			*x  = 0;
@@ -530,9 +531,9 @@ draw_text( cairo_t *cr, text_box_t *text, text_t *text_theme)
 				
 				cairo_set_scaled_font( cr, frag->style);
 				
-				if( frag->underlined ) {
+				if( frag->underlined > 0 ) {
 					cairo_move_to( cr, frag->glyphs[0].x, frag->glyphs[0].y + text->font->ul_pos);
-					cairo_rel_line_to( cr, frag->to_x, 0);
+					cairo_rel_line_to( cr, frag->underlined, 0);
 					cairo_set_line_width( cr, text->font->ul_width);
 				}
 				
