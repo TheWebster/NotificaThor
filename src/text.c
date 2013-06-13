@@ -119,6 +119,13 @@ free_font( thor_font_t *font)
 };
 
 
+/*
+ * Allocates a new text_line struct and returns the new element.
+ * 
+ * Parameter: box - The text_box_t to which the text_line should be added.
+ * 
+ * Returns: A Pointer to the new element.
+ */
 static text_line *
 alloc_line( text_box_t *box)
 {
@@ -132,6 +139,13 @@ alloc_line( text_box_t *box)
 };
 
 
+/*
+ * Allocates a new text_word struct and returns the new element.
+ * 
+ * Parameter: box - The text_box_t to which the text_word should be added.
+ * 
+ * Returns: A Pointer to the new element.
+ */
 static text_word *
 alloc_word( text_box_t *box)
 {
@@ -145,6 +159,13 @@ alloc_word( text_box_t *box)
 };
 
 
+/*
+ * Allocates a new text_fragment struct and returns the new element.
+ * 
+ * Parameter: box - The text_box_t to which the text_fragment should be added.
+ * 
+ * Returns: A Pointer to the new element.
+ */
 static text_fragment *
 alloc_frag( text_box_t *box)
 {
@@ -157,6 +178,14 @@ alloc_frag( text_box_t *box)
 	return &box->frag[index];
 };
 
+
+/*
+ * Moves the glyphs contained in a text_fragment by an x and y value.
+ * 
+ * Parameters: frag - The text_fragment containing the glyphs to be moved.
+ *             x, y - The amount by which they should be moved.
+ * 
+ */
 static void
 move_frag( text_fragment *frag, double x, double y)
 {
@@ -170,6 +199,13 @@ move_frag( text_fragment *frag, double x, double y)
 };
 
 
+/*
+ * Calls move_frag() for each text_fragment contained by a text_word.
+ * 
+ * Parameters: word - The text_word containing the text_fragments to be modified-
+ *             frag - The first text_fragment not contained by word.
+ *             x, y - The amount by which the glyphs should be moved.
+ */
 static void
 move_word( text_word *word, text_fragment *frag, double x, double y)
 {
@@ -194,6 +230,19 @@ move_word( text_word *word, text_fragment *frag, double x, double y)
 #define STYLE_END          (1 << 5)
 
 
+/*
+ * Adds a new text_fragment to a text_box_t and altering the current line, word and
+ * x|y position accordingly by handling newlines, whitespaces and linesplitting.
+ * 
+ * Parameters: box    - The text_box_t to add the fragment to.
+ *             line   - Handle to the current line, is modified when advancing to next line.
+ *             word   - Handle to the current word, is modified when advancing to next word.
+ *             style  - Style property flags to modify behaviour.
+ *             x,y    - Pointers to current position, is modified accordingly.
+ *             fwidth - Line width, that is forced upon the text. Ignored when 0.
+ *             string - UTF8 encoded string to translate.
+ *             len    - Length of string.
+ */
 static void
 add_fragment( text_box_t *box, text_line **line, text_word **word, int style,
               double *x, double *y, double fwidth, char *string, int len)
@@ -220,6 +269,7 @@ add_fragment( text_box_t *box, text_line **line, text_word **word, int style,
 	cairo_scaled_font_glyph_extents( frag->style, frag->glyphs, frag->nglyphs, &ext);
 	frag->free_glyph = frag->glyphs;
 	
+	
 	if( frag->underlined )
 		frag->to_x = ext.x_advance;
 	
@@ -235,7 +285,7 @@ add_fragment( text_box_t *box, text_line **line, text_word **word, int style,
 			*y += box->font->ext.height;
 			*x  = 0;
 		}
-		
+		/** split line in middle of word if neccessary **/
 		while( (*x + ext.x_advance) > fwidth ) {
 			cairo_glyph_t       *hlp_glyphs = frag->glyphs;
 			int                 hlp_nglyphs = frag->nglyphs;
@@ -243,6 +293,7 @@ add_fragment( text_box_t *box, text_line **line, text_word **word, int style,
 			int                 hlp_ul      = frag->underlined;
 			
 			
+			/** evaluate break **/
 			while( (*x + ext.x_advance) > fwidth ) {
 				frag->nglyphs--;
 				cairo_scaled_font_glyph_extents( frag->style, frag->glyphs, frag->nglyphs, &ext);
@@ -419,6 +470,7 @@ prepare_text( char *text, thor_font_t *font, double fwidth)
 	add_fragment( res, &line, &word, style|STYLE_END, &x, &y, fwidth,
 			      text, ptr - text);
 	
+	/** set width to forced width **/
 	if( fwidth > 0 )
 		res->width = fwidth;
 	
