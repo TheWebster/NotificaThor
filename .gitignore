@@ -1,6 +1,5 @@
 /obj
 /deps
 /bin
-/pkgs
 doc/*[0-9]
 doc/*[0-9].gz
