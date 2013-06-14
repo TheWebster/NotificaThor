@@ -75,7 +75,8 @@ Defines the distance of any elements from the top border of the window.
 .B Surface BACKGROUND {}
 Surface describing the background of the window.
 .TP
-.BR IMAGE{} " and " BAR{}.
+.BR IMAGE{} ", " BAR{} " and " TEXT{} .
+Objects describing the properties of image, bar and text.
 
 .SS Surfaces
 .TP
