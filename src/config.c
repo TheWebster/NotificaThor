@@ -2,7 +2,7 @@
  * config.c                                                      *
  *                                                               *
  * Project:     NotificaThor                                     *
- * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
  *                                                               *
  * Description: Config file parsing.                             *
 \* ************************************************************* */

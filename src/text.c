@@ -1,3 +1,11 @@
+/* ************************************************************* *\
+ * text.c                                                        *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Text API.                                        *
+\* ************************************************************* */
 
 
 #include <cairo/cairo.h>

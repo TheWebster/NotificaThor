@@ -1,3 +1,13 @@
+/* ************************************************************* *\
+ * text.h                                                        *
+ *                                                               *
+ * Project:     NotificaThor                                     *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
+ *                                                               *
+ * Description: Text API.                                        *
+\* ************************************************************* */
+
+
 // forward declaration
 typedef struct text_t_ text_t;
 

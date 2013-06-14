@@ -2,7 +2,7 @@
  * NotificaThor.h                                                *
  *                                                               *
  * Project:     NotificaThor                                     *
- * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
  *                                                               *
  * Description: String definitions, declaration                  *
  *              of functions from 'utils.c'.                     *
