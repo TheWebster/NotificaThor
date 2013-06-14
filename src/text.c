@@ -141,7 +141,7 @@ alloc_line( text_box_t *box)
 	int       index = box->nlines++;
 	
 	
-	_realloc( box->line, text_line, box->nlines);
+	thor_realloc( box->line, text_line, box->nlines);
 	memset( &box->line[index], 0, sizeof(text_line));
 	
 	return &box->line[index];
@@ -161,7 +161,7 @@ alloc_word( text_box_t *box)
 	int       index = box->nwords++;
 	
 	
-	_realloc( box->word, text_word, box->nwords);
+	thor_realloc( box->word, text_word, box->nwords);
 	memset( &box->word[index], 0, sizeof(text_word));
 	
 	return &box->word[index];
@@ -181,7 +181,7 @@ alloc_frag( text_box_t *box)
 	int           index = box->nfrags++;
 	
 	
-	_realloc( box->frag, text_fragment, box->nfrags);
+	thor_realloc( box->frag, text_fragment, box->nfrags);
 	memset( &box->frag[index], 0, sizeof(text_fragment));
 	
 	return &box->frag[index];

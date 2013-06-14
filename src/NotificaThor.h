@@ -38,6 +38,6 @@ void go_up( char *string);
 char* cpycat(char* dst,char* src);
 int _parse_number( char *string, int *number, int allow_neg, char *logmsg, int line);
 #define parse_number( string, nptr, allow_neg)   _parse_number( string, nptr, allow_neg, log_msg, line)
-#define _realloc( ptr, type, elements)           ptr = (type*)realloc( ptr, elements*sizeof(type))
+#define thor_realloc( ptr, type, elements)           ptr = (type*)realloc( ptr, elements*sizeof(type))
 char *get_home_config();
 char *get_xdg_cache();

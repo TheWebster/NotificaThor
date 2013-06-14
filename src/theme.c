@@ -250,7 +250,7 @@ create_layer( unsigned char pat_type, surface_t *surface, char *value)
 	
   add_layer:
 	newi = surface->nlayers++;
-	_realloc( surface->layer, layer_t, surface->nlayers);
+	thor_realloc( surface->layer, layer_t, surface->nlayers);
 	surface->layer[newi].pattern  = pat;
 	surface->layer[newi].operator = CAIRO_OPERATOR_OVER;
 	
