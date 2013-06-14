@@ -20,6 +20,7 @@
 #include <syslog.h>
 #include <sys/inotify.h>
 
+#include "cairo_guards.h"
 #include "com.h"
 #include "text.h"
 #include "theme.h"

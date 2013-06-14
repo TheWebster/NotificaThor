@@ -26,6 +26,7 @@
 #include <xcb/shape.h>
 
 #define CONFIG_GRAPHICAL
+#include "cairo_guards.h"
 #include "com.h"
 #include "text.h"
 #include "theme.h"

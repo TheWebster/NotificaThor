@@ -15,6 +15,7 @@
 #include <string.h>
 #include <syslog.h>
 
+#include "cairo_guards.h"
 #include "config.h"
 #include "text.h"
 #include "theme.h"

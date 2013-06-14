@@ -145,7 +145,7 @@ print_config()
 	thor_log( LOG_DEBUG, "  osd_default_y       = %d, abs = %d", config_osd_default_y.coord,
 	                                                             config_osd_default_y.abs_flag);
 };
-#endif
+#endif /* VERBOSE */
 
 /*
  * Parses the config file.
@@ -160,16 +160,16 @@ parse_conf()
 	int  c;
 #ifndef TESTING
 	char *config_file = get_home_config();
-#else
+#else /* Not TESTING */
 	char config_file[FILENAME_MAX];
-#endif
+#endif /* Not TESTING */
 	
 	
 #ifndef TESTING
 	strcat( config_file, "/rc.conf");
 	
 	if( (fconf = fopen( config_file, "r")) == NULL ) {
-#endif
+#endif /* TESTING */
 		cpycat( config_file, DEFAULT_CONFIG);
 		
 		if( (fconf = fopen( config_file, "r")) == NULL ) {
@@ -177,12 +177,12 @@ parse_conf()
 #ifdef VERBOSE
 			thor_log( LOG_DEBUG, "DEFAULT CONFIGURATION:");
 			print_config();
-#endif
+#endif /* VERBOSE */
 			return -1;
 		}
 #ifndef TESTING
 	}
-#endif
+#endif /* TESTING */
 	
 	thor_log( LOG_DEBUG, "Config file: '%s'", config_file);
 	
@@ -255,7 +255,7 @@ parse_conf()
 #ifdef VERBOSE
 	thor_log( LOG_DEBUG, "CONFIGURATION:");
 	print_config();
-#endif
+#endif /* VERBOSE */
 	          
 	return 0;
 };

@@ -88,7 +88,7 @@ print_message( thor_message *msg)
 	if( msg->image_len )
 		free( str_read);
 };
-#endif
+#endif /* VERBOSE */
 
 
 /*
@@ -146,7 +146,7 @@ handle_message( int sockfd, timer_t timer)
 #ifdef VERBOSE
 	thor_log( LOG_DEBUG, "Received message over socket:");
 	print_message( &msg);
-#endif
+#endif /* VERBOSE */
 	
 	/** query pid **/
 	if( msg.flags & COM_QUERY ) {

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <syslog.h>
 
+#include "cairo_guards.h"
 #include "NotificaThor.h"
 #include "logging.h"
 #include "images.h"
@@ -51,7 +52,7 @@ get_pattern_for_png( char *filename)
 		if( strcmp( image_cache[i].filename, filename) == 0 ) {
 #ifdef VERBOSE
 			thor_log( LOG_DEBUG, "Found '%s' in image_cache[%d]...", filename, i);
-#endif
+#endif /* VERBOSE */
 			return image_cache[i].pattern;
 		}
 	}
@@ -59,7 +60,7 @@ get_pattern_for_png( char *filename)
 	/** otherwise create it **/
 #ifdef VERBOSE
 	thor_log( LOG_DEBUG, "Creating pattern for '%s' in image_cache[%d]...", filename, next_im_cache);
-#endif
+#endif /* VERBOSE */
 	surface = cairo_image_surface_create_from_png( filename);
 	pattern = cairo_pattern_create_for_surface( surface);
 	if( cairo_pattern_status( pattern) != CAIRO_STATUS_SUCCESS ) {

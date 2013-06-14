@@ -17,6 +17,7 @@
 #define CONFIG_GRAPHICAL
 #define TEXT_PRIVATE
 #define THEME_PRIVATE
+#include "cairo_guards.h"
 #include "text.h"
 #include "theme.h"
 #include "config.h"
