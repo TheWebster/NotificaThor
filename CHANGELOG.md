@@ -1,6 +1,13 @@
 Changelog
 =========
 
+## 0.4.0
+* Added text support! Messages can be displayed with the '--message' option of thor-cli
+* Updated default themes and rc.conf appropriately
+* Now setting WM_NAME property to "NotificaThor" for better detection by comp-managers
+* Increased amount of dumping when compiled with VERBOSE-flag
+* fixed some typos in man pages
+
 ## 0.3.1
 * Added three new themes
 * Fixed custom position drawing
