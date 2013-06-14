@@ -27,7 +27,11 @@ Dependencies
 - libpthread
 - libxcb
 - libxcb-shape
-- libcairo
+- libfreetype2
+- libfontconfig
+- libmath
+- libcairo >= 1.12
+    with support for *fontconfig*, *freetype*, *png-functions*, *image-surfaces* and *xcb-surfaces*.
 
 
 Installing
@@ -72,4 +76,6 @@ To add an image run
 
 	$ thor-cli -b2/3 -i"/path/to/an/image-file"
 
-The *scripts* directory contains two examples for real usage.
+You can also show a text message:
+
+	$ thor-cli --no-image --no-bar -m'Hello World!'
