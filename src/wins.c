@@ -9,7 +9,6 @@
 \* ************************************************************* */
 
 
-#define CONFIG_GRAPHICAL
 
 #include <cairo/cairo.h>
 #include <cairo/cairo-xcb.h>
@@ -27,7 +26,10 @@
 #include <xcb/xproto.h>
 #include <xcb/shape.h>
 
+#define CONFIG_GRAPHICAL
+#include "cairo_guards.h"
 #include "com.h"
+#include "text.h"
 #include "theme.h"
 #include "config.h"
 #include "wins.h"
@@ -48,7 +50,7 @@ static xcb_visualtype_t *visual = NULL;
 static pthread_t        xevents;
 static int              has_xshape = 0;
 
-static thor_theme       theme;
+static thor_theme       theme = {0};
 
 /** config from NotificaThor.c **/
 extern int  xerror;
@@ -245,14 +247,14 @@ prepare_x()
 		cw_value[0] = 0xff000000;
 		cw_value[1] = 0xffffffff;
 		cw_value[2] = 1;
-		cw_value[3] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+		cw_value[3] = XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		cw_value[4] = cmap;
 		cw_depth    = 32;
 	}
 	else {
 		cw_mask     = XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK;
 		cw_value[0] = 1;
-		cw_value[1] = XCB_EVENT_MASK_EXPOSURE|XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+		cw_value[1] = XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 		cw_depth    = XCB_COPY_FROM_PARENT;
 	}
 	
@@ -266,6 +268,9 @@ prepare_x()
 		                   visual->visual_id, cw_mask, cw_value);
 		xcb_change_property( con, XCB_PROP_MODE_REPLACE, wins[i].win, wmtype_reply->atom,
 	                         XCB_ATOM_ATOM, 32, 1, &note_reply->atom);
+	    xcb_change_property( con, XCB_PROP_MODE_REPLACE, wins[i].win, XCB_ATOM_WM_NAME,
+	                         XCB_ATOM_STRING, 8, 12, "NotificaThor");
+	
 	    
 	    /** init "mapped" semaphore **/
 		sem_init( &wins[i].mapped, 0, 0);
@@ -308,8 +313,39 @@ parse_default_theme()
 	if( *config_default_theme != '\0') {
 		parse_theme( config_default_theme, &theme);
 	}
+	/** fallback **/
+	else {
+		theme.padtoborder_x = 15;
+		theme.padtoborder_y = 15;
+		
+		theme.bar.width     = 200;
+		theme.bar.height    = 20;
+		
+		theme.image.width   = 100;
+		theme.image.height  = 100;
+	}
+	
+	if( theme.text.font == NULL ) {
+		theme.text.font = init_font( "");
+	}
 };
 
+
+#ifdef VERBOSE
+#pragma message( "VERBOSE mode defining 'print_coords()'...")
+static void
+print_coords( uint32_t *cval, thor_theme *theme, text_box_t *text)
+{
+	thor_log( LOG_DEBUG, "  Window x|y: %u|%u", cval[0], cval[1]);
+	thor_log( LOG_DEBUG, "  Window w|h: %u|%u", cval[2], cval[3]);
+	thor_log( LOG_DEBUG, "  Image x|y:  %u|%u", theme->image.x, theme->image.y);
+	thor_log( LOG_DEBUG, "  Image w|h:  %u|%u", theme->image.width, theme->image.height);
+	thor_log( LOG_DEBUG, "  Bar x|y:    %u|%u", theme->bar.x, theme->bar.y);
+	thor_log( LOG_DEBUG, "  Bar w|h:    %u|%u", theme->bar.width, theme->bar.height);
+	thor_log( LOG_DEBUG, "  Text x|y:   %u|%u", theme->text.x, theme->text.y);
+	thor_log( LOG_DEBUG, "  Text w|h:   %f|%f", text->width, text->height);
+};
+#endif
 
 /*
  * Render a window as specified in the message.
@@ -325,6 +361,7 @@ show_win( thor_message *msg)
 	cairo_t         *cr       = NULL;
 	cairo_surface_t *surf_buf = NULL;
 	cairo_surface_t *surf_win = NULL;
+	text_box_t      *text     = NULL;
 	
 	
 	if( msg->flags & COM_NOTE ) {
@@ -346,7 +383,8 @@ show_win( thor_message *msg)
 	else {
 		window = &wins[config_notifications];
 		
-		if( (msg->flags & (COM_NO_IMAGE|COM_NO_BAR)) == (COM_NO_IMAGE|COM_NO_BAR) ) {
+		/** stop here if there is nothing to be done **/
+		if( msg->flags & COM_NO_IMAGE && msg->flags & COM_NO_BAR && msg->message_len < 2 ) {
 			thor_log( LOG_DEBUG, "No elements to be drawn.");
 			return -1;
 		}
@@ -358,17 +396,33 @@ show_win( thor_message *msg)
 			if( !(msg->flags & COM_NO_IMAGE) ) {
 				window->extents[2] = theme.image.x + theme.image.width;
 				window->extents[3] = theme.image.y + theme.image.height;
+				theme.image.x += theme.padtoborder_x;
+				theme.image.y += theme.padtoborder_y;
+			}
+			if( !(msg->flags & COM_NO_BAR) ) {
+				window->extents[2] = ( theme.bar.x + theme.bar.width  > window->extents[2] ) ? theme.bar.x + theme.bar.width
+				                                                                             : window->extents[2];
+				window->extents[3] = ( theme.bar.y + theme.bar.height > window->extents[3] ) ? theme.bar.y + theme.bar.height
+				                                                                             : window->extents[3];
 				theme.bar.x += theme.padtoborder_x;
 				theme.bar.y += theme.padtoborder_y;
 			}
-			if( !(msg->flags & COM_NO_BAR) ) {
-				use_largest( &window->extents[2], theme.bar.x + theme.bar.width);
-				use_largest( &window->extents[3], theme.bar.y + theme.bar.height);
-				theme.bar.x += theme.padtoborder_x;
-				theme.bar.y += theme.padtoborder_y;
+			if( msg->message_len > 1 ) {
+				text = prepare_text( msg->message, theme.text.font, theme.text.width);
+				
+				window->extents[2] = ( theme.text.x + text->width  > window->extents[2] ) ? theme.text.x + text->width
+																	                      : window->extents[2];
+				window->extents[3] = ( theme.text.y + text->height > window->extents[3] ) ? theme.text.y + text->height
+																	                      : window->extents[3];
+				theme.text.x += theme.padtoborder_x;
+				theme.text.y += theme.padtoborder_y;
 			}
 			window->extents[2] += 2 * theme.padtoborder_x;
 			window->extents[3] += 2 * theme.padtoborder_y;
+			
+			#ifdef VERBOSE
+			thor_log( LOG_DEBUG, "Using custom dimensions:");
+			#endif /* VERBOSE */
 		}
 		/** get default geometry **/
 		else {
@@ -383,8 +437,18 @@ show_win( thor_message *msg)
 					window->extents[3] += 20;
 				
 				theme.bar.y = window->extents[3];
-				use_largest( &window->extents[2], theme.bar.width);
+				window->extents[2] = ( theme.bar.width > window->extents[2] ) ? theme.bar.width
+				                                                              : window->extents[2];
 				window->extents[3] += theme.bar.height;
+			}
+			if( msg->message_len > 1 ) {
+				text = prepare_text( msg->message, theme.text.font, theme.text.width);
+				if( window->extents[3] > theme.padtoborder_y )
+					window->extents[3] += 20;
+				theme.text.y = window->extents[3];
+				window->extents[2]  = ( text->width > window->extents[2] ) ? text->width
+				                                                           : window->extents[2];
+				window->extents[3] += text->height;
 			}
 			window->extents[2] += 2 * theme.padtoborder_x;
 			window->extents[3] += theme.padtoborder_y;
@@ -392,6 +456,18 @@ show_win( thor_message *msg)
 			// positions
 			theme.image.x = (window->extents[2] / 2) - (theme.image.width / 2);
 			theme.bar.x   = (window->extents[2] / 2) - (theme.bar.width / 2);
+			if( msg->message_len > 1 ) {
+				if( theme.text.align_text == ALIGN_LEFT )
+					theme.text.x = theme.padtoborder_x;
+				else if( theme.text.align_text == ALIGN_RIGHT )
+					theme.text.x = window->extents[2] - theme.padtoborder_x - text->width;
+				else if( theme.text.align_text == ALIGN_CENTER )
+					theme.text.x = (window->extents[2] / 2) - (text->width / 2);
+			}
+			
+			#ifdef VERBOSE
+			thor_log( LOG_DEBUG, "Using default dimensions:");
+			#endif /*VERBOSE*/
 		}
 		
 		/** set osd position **/
@@ -408,6 +484,9 @@ show_win( thor_message *msg)
 			window->extents[1] = (screen->height_in_pixels / 2)
 			                   - ( window->extents[3] / 2 )
 			                   + config_osd_default_y.coord; // y
+		#ifdef VERBOSE
+		print_coords( window->extents, &theme, text);
+		#endif
 	}
 	
 	/** initialize cairo **/
@@ -481,6 +560,13 @@ show_win( thor_message *msg)
 		
 	}
 	
+	/** draw text to buffering surface **/
+	if( msg->message_len > 1 ) {
+		fallback_surface.surf_color = 0xffffffff;
+		fallback_surface.surf_op    = CAIRO_OPERATOR_DIFFERENCE;
+		draw_text( cr, text, &theme.text);
+	}
+	
 	cairo_destroy( cr);
 	
 	/** reset dimensions **/
@@ -492,6 +578,10 @@ show_win( thor_message *msg)
 		if( !(msg->flags & COM_NO_BAR) ) {
 			theme.bar.x -= theme.padtoborder_x;
 			theme.bar.y -= theme.padtoborder_y;
+		}
+		if( msg->message_len > 1 ) {
+			theme.text.x -= theme.padtoborder_x;
+			theme.text.y -= theme.padtoborder_y;
 		}
 	}
 	

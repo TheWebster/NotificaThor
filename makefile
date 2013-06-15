@@ -22,7 +22,7 @@ clean: clean-bin clean-doc
 ############################
 # Building the Application #
 ############################
-CFLAGS    = -Wall -D 'VERSION="$(VER)"'
+CFLAGS    = -Wall -D 'VERSION="$(VER)"' -I /usr/include/freetype2
 
 ifneq (,$(findstring debug, $(MAKECMDGOALS)))
 CFLAGS   += -g
@@ -38,9 +38,9 @@ ifneq (,$(findstring verbose, $(MAKECMDGOALS)))
 CFLAGS   += -D 'VERBOSE'
 endif
 	
-THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread
+THOR_LIBS = -lxcb -lxcb-shape -lcairo -lrt -pthread -lfontconfig -lm
 _THOR_OBJ = com.o config.o drawing.o logging.o NotificaThor.o theme.o\
-            utils.o wins.o wins_notifications.o images.o
+            utils.o wins.o wins_notifications.o images.o text.o
 THOR_OBJ  = $(addprefix obj/, $(_THOR_OBJ))
 
 BIN_PATH  = $(prefix)/usr/
@@ -71,7 +71,7 @@ bin/notificathor: $(THOR_OBJ) $(filter-out $(wildcard bin/), bin/)
 
 # Link thor-cli
 bin/thor-cli: obj/thor-cli.o $(filter-out $(wildcard bin/), bin/)
-	@echo "Building $@..."
+	@echo "Building $@...  "
 	@$(CC) $< -o $@
 
 # Compile sources, create dependency files

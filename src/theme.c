@@ -20,7 +20,9 @@
 #include <syslog.h>
 #include <sys/inotify.h>
 
+#include "cairo_guards.h"
 #include "com.h"
+#include "text.h"
 #include "theme.h"
 #include "NotificaThor.h"
 #include "logging.h"
@@ -39,6 +41,7 @@
 #define t_border        ((border_t*)target)
 #define t_bar           ((bar_t*)target)
 #define t_image         ((image_t*)target)
+#define t_text          ((text_t*)target)
 
 /** control variables **/
 static unsigned int     line;
@@ -247,7 +250,7 @@ create_layer( unsigned char pat_type, surface_t *surface, char *value)
 	
   add_layer:
 	newi = surface->nlayers++;
-	_realloc( surface->layer, layer_t, surface->nlayers);
+	thor_realloc( surface->layer, layer_t, surface->nlayers);
 	surface->layer[newi].pattern  = pat;
 	surface->layer[newi].operator = CAIRO_OPERATOR_OVER;
 	
@@ -409,6 +412,7 @@ parse_symbol( int *target, char *key, theme_symbol_t *sym_list)
 #define LEVEL_IMAGE   5
 #define LEVEL_PNG     6
 #define LEVEL_RADIAL  7
+#define LEVEL_TEXT    8
 static int
 parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 {
@@ -446,6 +450,10 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 					}
 					else if( strcmp( buffer, "IMAGE") == 0 ) {
 						if( parse_block( ftheme, buffer, LEVEL_IMAGE, (void*)&t_theme->image) == -1 )
+							return -1;
+					}
+					else if( strcmp( buffer, "TEXT") == 0 ) {
+						if( parse_block( ftheme, buffer, LEVEL_TEXT, (void*)&t_theme->text) == -1 )
 							return -1;
 					}
 					else
@@ -509,6 +517,16 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 					case LEVEL_IMAGE:
 						if( strcmp( buffer, "picture") == 0 ) {
 							if( parse_block( ftheme, buffer, LEVEL_SURFACE, (void*)&t_image->picture) == -1 )
+								return -1;
+						}
+						else
+							goto no_block;
+						break;
+				
+				/** TEXT level **/
+					case LEVEL_TEXT:
+						if( strcmp( buffer, "surface") == 0 ) {
+							if( parse_block( ftheme, buffer, LEVEL_SURFACE, (void*)&t_text->surface) == -1 )
 								return -1;
 						}
 						else
@@ -710,6 +728,36 @@ parse_block( FILE *ftheme, char *buffer, unsigned char level, void *target)
 						else
 							goto no_key;
 						break;
+					
+					/** TEXT level **/
+					case LEVEL_TEXT:
+						if( strcmp( key, "x") == 0 ) {
+							if( parse_number( value, (int*)&t_text->x, 0) == -1 )
+								return -1;
+							
+							*custom_dim = 1;
+						}
+						else if( strcmp( key, "y") == 0 ) {
+							if( parse_number( value, (int*)&t_text->y, 0) == -1 )
+								return -1;
+							
+							*custom_dim = 1;
+						}
+						else if( strcmp( key, "width") == 0 ) {
+							if( parse_number( value, (int*)&t_text->width, 0) == -1 )
+								return -1;
+						}
+						else if( strcmp( key, "font") == 0 ) {
+							t_text->font = init_font( value);
+						}
+						else if( strcmp( key, "align-text") == 0 ) {
+							parse_symbol( &t_text->align_text, value, align);
+						}
+						else if( strcmp( key, "align-lines") == 0 ) {
+							parse_symbol( &t_text->align_lines, value, align);
+						}
+						else
+							goto no_key;
 				}
 				break;
 			
@@ -833,6 +881,10 @@ free_theme( thor_theme *theme)
 	
 	/** free image **/
 	free_surface( &theme->image.picture);
+	
+	/** free text surface **/
+	free_surface( &theme->text.surface);
+	free_font( theme->text.font);
 	
 	memset( theme, 0, sizeof(thor_theme));
 };

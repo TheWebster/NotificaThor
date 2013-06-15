@@ -83,3 +83,14 @@ BAR
 		}
 	}
 }
+
+TEXT
+{
+	font: -16;
+	surface {
+		linear {
+			stop: #888888|0;
+			stop: #100|1;
+		}
+	}
+}

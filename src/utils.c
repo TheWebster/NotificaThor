@@ -19,17 +19,6 @@
 
 
 /*
- * Stores the larger value in dest.
- */
-void
-use_largest( uint32_t *dest, uint32_t src)
-{
-	if( src > *dest )
-		*dest = src;
-};
-
-
-/*
  * Removes last part of a path.
  * /foo/bar/path -> /foo/bar
  * 

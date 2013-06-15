@@ -2,7 +2,7 @@
  * config.c                                                      *
  *                                                               *
  * Project:     NotificaThor                                     *
- * Author:      Christian Weber (ChristianWeber802@gmx.net       *
+ * Author:      Christian Weber (ChristianWeber802@gmx.net)      *
  *                                                               *
  * Description: Config file parsing.                             *
 \* ************************************************************* */
@@ -25,6 +25,7 @@
 #include "logging.h"
 
 
+#define CONFIG_DEFAULT_FONT  "-12"
 char          config_default_theme[MAX_THEME_LEN + 1] = {0};
 double        config_osd_default_timeout              = 2;
 double        config_note_default_timeout             = 10;
@@ -33,6 +34,7 @@ coord_t       config_osd_default_x                    = {0, 0};
 coord_t       config_osd_default_y                    = {0, 0};
 int           config_use_argb                         = 1;
 int           config_use_xshape                       = 0;
+char          config_default_font[MAX_FONT_LEN + 1]   = CONFIG_DEFAULT_FONT;
 
 
 #define MAX_LINE_LEN      FILENAME_MAX + 64
@@ -127,6 +129,26 @@ parse_coord( char *string, coord_t *target)
 };
 
 
+#ifdef VERBOSE
+#pragma message( "VERBOSE mode defining 'print_config()'...")
+/*
+ * Prints configuration.
+ */
+static void
+print_config()
+{
+	thor_log( LOG_DEBUG, "  use_argb            = %d", config_use_argb);
+	thor_log( LOG_DEBUG, "  use_xshape          = %d", config_use_xshape);
+	thor_log( LOG_DEBUG, "  default_theme       = \"%s\"", config_default_theme);
+	thor_log( LOG_DEBUG, "  default_font        = \"%s\"", config_default_font);
+	thor_log( LOG_DEBUG, "  osd_default_timeout = %f", config_osd_default_timeout);
+	thor_log( LOG_DEBUG, "  osd_default_x       = %d, abs = %d", config_osd_default_x.coord,
+	                                                             config_osd_default_x.abs_flag);
+	thor_log( LOG_DEBUG, "  osd_default_y       = %d, abs = %d", config_osd_default_y.coord,
+	                                                             config_osd_default_y.abs_flag);
+};
+#endif /* VERBOSE */
+
 /*
  * Parses the config file.
  * 
@@ -140,41 +162,29 @@ parse_conf()
 	int  c;
 #ifndef TESTING
 	char *config_file = get_home_config();
-#else
+#else /* Not TESTING */
 	char config_file[FILENAME_MAX];
-#endif
+#endif /* Not TESTING */
 	
 	
 #ifndef TESTING
 	strcat( config_file, "/rc.conf");
 	
 	if( (fconf = fopen( config_file, "r")) == NULL ) {
-#endif
+#endif /* TESTING */
 		cpycat( config_file, DEFAULT_CONFIG);
 		
 		if( (fconf = fopen( config_file, "r")) == NULL ) {
 			thor_errlog( LOG_ERR, "Opening config file");
 #ifdef VERBOSE
-			thor_log( LOG_DEBUG, "DEFAULT CONFIGURATION:\n"
-								 "\tuse_argb             = %d\n"
-			                     "\tuse_xshape           = %d\n"
-			                     "\tdefault_theme        = \"%s\"\n"
-			                     "\tnote_default_timeout = %f seconds\n"
-			                     "\tosd_default_timeout  = %f seconds\n"
-			                     "\tnotifications        = %d\n"
-			                     "\tosd_default_x        = %d, abs = %d\n"
-			                     "\tosd_default_y        = %d, abs = %d",
-					  config_use_argb, config_use_xshape, config_default_theme,
-					  config_note_default_timeout, config_osd_default_timeout,
-					  config_notifications,
-					  config_osd_default_x.coord, config_osd_default_x.abs_flag,
-					  config_osd_default_y.coord, config_osd_default_y.abs_flag);
-#endif
+			thor_log( LOG_DEBUG, "DEFAULT CONFIGURATION:");
+			print_config();
+#endif /* VERBOSE */
 			return -1;
 		}
 #ifndef TESTING
 	}
-#endif
+#endif /* TESTING */
 	
 	thor_log( LOG_DEBUG, "Config file: '%s'", config_file);
 	
@@ -182,6 +192,10 @@ parse_conf()
 		if( inotify_add_watch( inofd, config_file, IN_MODIFY|IN_DELETE_SELF|IN_MOVE_SELF|IN_CLOSE_WRITE) == -1 )
 			thor_ferrlog( LOG_ERR, "Installing Inotify watch on '%s'", config_file);
 	}
+	
+	/** default values **/
+	*config_default_theme = '\0';
+	strcpy( config_default_font, CONFIG_DEFAULT_FONT);
 	
 	while( (c = fgetline( fconf, buffer)) != -1 )
 	{
@@ -219,6 +233,8 @@ parse_conf()
 		}
 		else if( strcmp( key, "default_theme") == 0 )
 			strncpy( config_default_theme, value, MAX_THEME_LEN);
+		else if( strcmp( key, "default_font") == 0 )
+			strncpy( config_default_font, value, MAX_FONT_LEN);
 		else if( strcmp( key, "osd_default_timeout") == 0 ) {
 			char   *endptr;
 			double to = strtod( value, &endptr);
@@ -250,21 +266,9 @@ parse_conf()
 	fclose( fconf);
 	
 #ifdef VERBOSE
-	thor_log( LOG_DEBUG, "CONFIGURATION:\n"
-						 "\tuse_argb             = %d\n"
-						 "\tuse_xshape           = %d\n"
-						 "\tdefault_theme        = \"%s\"\n"
-						 "\tnote_default_timeout = %f seconds\n"
-						 "\tosd_default_timeout  = %f seconds\n"
-						 "\tnotifications        = %d\n"
-						 "\tosd_default_x        = %d, abs = %d\n"
-						 "\tosd_default_y        = %d, abs = %d",
-			  config_use_argb, config_use_xshape, config_default_theme,
-			  config_note_default_timeout, config_osd_default_timeout,
-			  config_notifications,
-			  config_osd_default_x.coord, config_osd_default_x.abs_flag,
-			  config_osd_default_y.coord, config_osd_default_y.abs_flag);
-#endif
+	thor_log( LOG_DEBUG, "CONFIGURATION:");
+	print_config();
+#endif /* VERBOSE */
 	          
 	return 0;
 };

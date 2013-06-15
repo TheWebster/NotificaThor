@@ -90,6 +90,24 @@ typedef struct
 } image_t;
 
 
+typedef struct text_t_
+{
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+	
+	thor_font_t  *font;
+	
+	#define ALIGN_CENTER  0
+	#define ALIGN_LEFT    1
+	#define ALIGN_RIGHT   2
+	int          align_text;
+	int          align_lines;
+	
+	surface_t    surface;
+} text_t;
+
 typedef struct
 {
 	unsigned int  padtoborder_x;
@@ -99,6 +117,7 @@ typedef struct
 	surface_t background;
 	bar_t     bar;
 	image_t   image;
+	text_t    text;
 } thor_theme;
 
 

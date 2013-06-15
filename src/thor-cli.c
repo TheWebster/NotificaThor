@@ -31,17 +31,19 @@
 	"    -t, --timeout   Timeout for the popup.\n"\
 	"    -b, --bar       The state of the bar in form of a fraction ( e.g. \"1/2\").\n"\
 	"    -i, --image     Sends filenames of images to NotificaThor.\n"\
+	"    -m, --message   Sends message string to NotificaThor.\n"\
 	"        --no-image  Suppresses the image element.\n"\
 	"        --no-bar    Suppresses the bar element.\n"\
 	"    -h, --help      No clue.\n"\
 	"    -V, --version   Print version info.\n"
 	
-static const char          optstring[] = "hVt:b:i:";
+static const char          optstring[] = "hVt:b:i:m:";
 static const struct option long_opts[] =
 {
 	{ "timeout" , required_argument, NULL, 't'},
 	{ "image"   , required_argument, NULL, 'i'},
 	{ "bar"     , required_argument, NULL, 'b'},
+	{ "message" , required_argument, NULL, 'm'},
 	{ "no-image", no_argument      , NULL, '0'},
 	{ "no-bar"  , no_argument      , NULL, '1'},
 	{ "note"    , no_argument      , NULL, 'n'},
@@ -116,7 +118,7 @@ main( int argc, char *argv[])
 				msg.image_len += strlen( optarg) + 1;
 				msg.image      = (char*)realloc( msg.image, msg.image_len);
 				cpycat( msg.image + image_len_tmp, optarg);
-				image_len_tmp  = msg.image_len;
+				image_len_tmp += msg.image_len;
 				break;
 			
 			case 'b':
@@ -124,6 +126,11 @@ main( int argc, char *argv[])
 					fprintf( stderr, "'%s' is not a valid expression.\n%s", optarg, USAGE);
 					return -1;
 				}
+				break;
+			
+			case 'm':
+				msg.message_len = strlen( optarg) + 1;
+				msg.message     = optarg;
 				break;
 			
 			case '0': // --no-image
@@ -170,10 +177,10 @@ main( int argc, char *argv[])
 		return 1;
 	}
 	
-	if( msg.image_len > 0 /* || other_len > 0 */ ) {
+	if( msg.image_len > 0  || msg.message_len > 0 ) {
 		char    ack = 0;
 		char    *buffer;
-		ssize_t len = msg.image_len /* + other_len */;
+		ssize_t len = msg.image_len + msg.message_len;
 		
 		
 		if( read( sockfd, &ack, 1) == -1 ) {
@@ -188,7 +195,7 @@ main( int argc, char *argv[])
 		
 		buffer = (char*)malloc( len);
 		memcpy( buffer, msg.image, msg.image_len);
-		// memcpy( buffer + msg.image_len, other, other_len);
+		memcpy( buffer + msg.image_len, msg.message, msg.message_len);
 		
 		if( write( sockfd, buffer, len) == -1 ) {
 			perror( "Sending string");

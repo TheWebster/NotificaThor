@@ -1,4 +1,4 @@
-.TH thor-cli 1 "28 April 2013" "%%VERSION%%"
+.TH thor-cli 1 "13 June 2013" "%%VERSION%%"
 
 
 
@@ -9,7 +9,7 @@
 
 .SH SYNOPSIS
 thor-cli
-.BI "[-hV] [-t " "seconds" "] [-i " "image-file" "] [-b " "fraction" "]"
+.BI "[-hV] [-t " "seconds" "] [-i " "image-file" "] [-b " "fraction" "] [-m " "message" "]"
 
 
 
@@ -40,6 +40,24 @@ Can be specified multiple times.
 .RI "Tells the daemon to fill the bar depending on " fraction .
 .br
 .IR fraction " takes the form of " parts / elements "; " 1/2 " will draw the bar half full."
+
+.TP
+.BI "-m " message ", --message=" message
+.RI "Tells NotificaThor to display " message .
+.br
+.IR message " is an UTF8 encoded string. It supports the follwing minimal HTML-markup:"
+.br
+.BR "<b>...</b>" " - use bold font."
+.br
+.BR "<i>...</i>" " - use italic font."
+.br
+.BR "<u>...</u>" " - underline text."
+.br
+.RB "A newline is produced by either by an escaped " "'n'" " or by a literal newline-character.
+.br
+.RB "Newlines, " "'<'" " and the escape character itself can be escaped by " "'\e'" .
+.br
+.R Keep in mind the escaping and quoting rules of your shell!
 
 .TP
 .B --no-image

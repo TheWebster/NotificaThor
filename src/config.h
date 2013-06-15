@@ -30,6 +30,8 @@ extern coord_t config_osd_default_x;
 extern coord_t config_osd_default_y;
 extern int     config_use_argb;
 extern int     config_use_xshape;
+#define MAX_FONT_LEN 64
+extern char    config_default_font[];
 	
 #endif
 	

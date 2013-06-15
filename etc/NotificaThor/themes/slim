@@ -29,8 +29,8 @@ IMAGE
 
 BAR
 {
-	x:      74;   // IMAGE-width + 10
-	y:      28;   // (IMAGE-height / 2) - (BAR-height / 2)
+	x:      74;   // IMAGE.width + 10
+	y:      28;   // (IMAGE.height / 2) - (BAR.height / 2)
 	width:  250;
 	height: 8;
 	empty {
@@ -50,4 +50,20 @@ BAR
 			stop: #888 | 1;
 		}
 	}
+}
+
+TEXT
+{
+	x:     74;   // BAR.x
+	y:     46;   // BAR.y + BAR.height + 10
+	width: 250;  // BAR.width
+	
+	surface {
+		linear {
+			stop: #ccc | 0;
+			stop: #aaa | 1;
+		}
+	}
+	
+	align-lines: left;
 }
