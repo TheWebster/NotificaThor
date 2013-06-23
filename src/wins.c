@@ -283,8 +283,12 @@ print_coords( uint32_t *cval, thor_theme *theme, text_box_t *text)
 	thor_log( LOG_DEBUG, "  Image w|h:  %u|%u", theme->image.width, theme->image.height);
 	thor_log( LOG_DEBUG, "  Bar x|y:    %u|%u", theme->bar.x, theme->bar.y);
 	thor_log( LOG_DEBUG, "  Bar w|h:    %u|%u", theme->bar.width, theme->bar.height);
-	thor_log( LOG_DEBUG, "  Text x|y:   %u|%u", theme->text.x, theme->text.y);
-	thor_log( LOG_DEBUG, "  Text w|h:   %f|%f", text->width, text->height);
+	if( text ) {
+		thor_log( LOG_DEBUG, "  Text x|y:   %u|%u", theme->text.x, theme->text.y);
+		thor_log( LOG_DEBUG, "  Text w|h:   %f|%f", text->width, text->height);
+	}
+	else
+		thor_log( LOG_DEBUG, "  No Text.");
 };
 #endif
 
