@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 0.4.1
+* Bugfix: Submitting more than one filename with thor-cli's '--icon=' option did not work properly
+* Corrected printing in verbose mode.
+
 ## 0.4.0
 * Added text support! Messages can be displayed with the '--message' option of thor-cli
 * Updated default themes and rc.conf appropriately
