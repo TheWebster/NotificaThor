@@ -69,7 +69,6 @@ fgetline( FILE *stream, char *buffer)
 		else if( c == '"' )
 			quoted = ( quoted ) ? 0 : 1;
 		else if( c == '\n' ) {
-			line++;
 			break;
 		}
 		else if( c == EOF ) {
@@ -198,6 +197,7 @@ parse_conf()
 	*config_default_theme = '\0';
 	strcpy( config_default_font, CONFIG_DEFAULT_FONT);
 	
+	line = 0;
 	while( (c = fgetline( fconf, buffer)) != -1 )
 	{
 		char *key, *value;
