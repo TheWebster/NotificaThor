@@ -1,6 +1,11 @@
 Changelog
 =========
 
+
+## 0.4.2
+* Bugfix: Line counting for config file now works correctly.
+* Support quoted values in *rc.conf*, so themes and font-strings with whitespaces are possible.
+
 ## 0.4.1
 * Bugfix: Submitting more than one filename with thor-cli's '--icon=' option did not work properly
 * Corrected printing in verbose mode.

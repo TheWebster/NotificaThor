@@ -1,4 +1,4 @@
-.TH NotificaThor 1 "13 June 2013" "%%VERSION%%"
+.TH NotificaThor 1 "07 July 2013" "%%VERSION%%"
 
 
 .SH NAME
@@ -93,6 +93,9 @@ A preceeding colon specifies an absolute x-coordinate.
 .TP
 .BI osd_default_timeout= seconds
 Default timeout in seconds after which the window disapears.
+
+The file parser discards whitespaces, so if you have a theme or a font-string
+containing a whitespace you have to quote it.
 
 
 
