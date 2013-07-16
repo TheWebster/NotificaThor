@@ -232,9 +232,13 @@ event_loop()
 			thor_log( LOG_DEBUG, "Rereading config file...");
 			sleep(1);
 			close( inofd);
+			cleanup_x();
+			
 			inofd = inotify_init();
 			parse_conf();
 			parse_default_theme();
+			if( prepare_x() == -1 )
+				goto err;
 		}
 	}
 	

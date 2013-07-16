@@ -21,8 +21,9 @@
 #include "config.h"
 
 
-int *note_stack;
-static int next_stack   = 0;
+int      *note_stack;
+int      next_stack   = 0;
+uint32_t stack_height = PAD_BORDER;
 
 
 /*
@@ -82,4 +83,3 @@ remove_note( thor_window_t *window)
 	window->stack_pos = -1;
 	note_stack[i]     = -1;
 };
-	

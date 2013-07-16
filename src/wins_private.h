@@ -26,6 +26,7 @@ typedef struct
 extern thor_window_t    *wins;
 extern xcb_connection_t *con;
 extern int              *note_stack;
+extern int              next_stack;
 extern uint32_t         stack_height;
 
 thor_window_t *get_note( thor_message *msg);

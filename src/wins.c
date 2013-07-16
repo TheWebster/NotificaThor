@@ -42,7 +42,6 @@
 
 xcb_connection_t *con;
 thor_window_t    *wins;
-uint32_t         stack_height = PAD_BORDER;
 
 
 static xcb_screen_t     *screen;
@@ -674,13 +673,19 @@ cleanup_x()
 	pthread_cancel( xevents);
 	free_image_cache();
 	
-	/** destroy notes **/
+	/** destroy windows **/
 	for( i = 0; i <= config_notifications; i++ ) {
 		xcb_destroy_window( con, wins[i].win);
 		sem_destroy( &wins[i].mapped);
 		timer_delete( wins[i].timer);
 	}
 	free( wins);
+	
+	/** reset notes **/
+	free( note_stack);
+	next_stack = 0;
+	stack_height = PAD_BORDER;
+	
 	xcb_flush( con);
 	xcb_disconnect( con);
 };
