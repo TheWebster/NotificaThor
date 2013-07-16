@@ -77,7 +77,9 @@ remove_note( thor_window_t *window)
 		xcb_configure_window( con, wins[note_stack[i]].win, 15, wins[note_stack[i]].extents);
 		xcb_flush( con);
 	}
+	
+	stack_height     -= (window->extents[3] + PAD_WINS);
 	window->stack_pos = -1;
-	note_stack[i] = -1;
+	note_stack[i]     = -1;
 };
 	

@@ -42,9 +42,9 @@
 
 xcb_connection_t *con;
 thor_window_t    *wins;
+uint32_t         stack_height = PAD_BORDER;
 
 
-static uint32_t         stack_height = PAD_BORDER;
 static xcb_screen_t     *screen;
 static xcb_visualtype_t *visual = NULL;
 static pthread_t        xevents;
@@ -67,7 +67,6 @@ timeout_handler( union sigval sv)
 	sem_wait( &wins[sv.sival_int].mapped);
 	
 	if( sv.sival_int < config_notifications ) {
-		stack_height -= (wins[sv.sival_int].extents[3] + PAD_WINS);
 		remove_note( &wins[sv.sival_int]);
 	}
 };
