@@ -51,9 +51,9 @@ print_message( thor_message *msg)
 	
 	if( msg->image_len ) {
 		str_read = (char*)malloc( msg->image_len);
-		strcpy( str_read, msg->image);
+		memcpy( str_read, msg->image, msg->image_len);
 		for( i = 0; i < msg->image_len - 1; i++ ) {
-			if( str_read[i] == '\0')
+			if( str_read[i] == '\0' && str_read[i+1] != 0 )
 				str_read[i] = ':';
 		}
 	}
@@ -62,6 +62,7 @@ print_message( thor_message *msg)
 	thor_log( LOG_DEBUG, "  No Image  = %d", (msg->flags & COM_NO_IMAGE) >> 1);
 	thor_log( LOG_DEBUG, "  No Bar    = %d", (msg->flags & COM_NO_BAR) >> 2);
 	thor_log( LOG_DEBUG, "  Timeout   = %f", msg->timeout);
+	thor_log( LOG_DEBUG, "  Image_len = %d", msg->image_len);
 	thor_log( LOG_DEBUG, "  Images    = \"%s\"", str_read);
 	thor_log( LOG_DEBUG, "  Message   = \"%s\"", msg->message);
 	thor_log( LOG_DEBUG, "  Bar       = %d/%d", msg->bar_part, msg->bar_elements);

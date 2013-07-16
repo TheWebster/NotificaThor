@@ -58,7 +58,8 @@ extern int inofd;
 static int
 fgetline( FILE *stream, char *buffer)
 {
-	int c, i = 0;
+	int c, i   = 0;
+	int quoted = 0;
 	
 	
 	*buffer = '\0';
@@ -66,9 +67,10 @@ fgetline( FILE *stream, char *buffer)
 	{
 		c = fgetc( stream);		
 		
-		if( c == ' ' || c == '\t' );
+		if( (c == ' ' || c == '\t') && !quoted);
+		else if( c == '"' )
+			quoted = ( quoted ) ? 0 : 1;
 		else if( c == '\n' ) {
-			line++;
 			break;
 		}
 		else if( c == EOF ) {
@@ -197,6 +199,7 @@ parse_conf()
 	*config_default_theme = '\0';
 	strcpy( config_default_font, CONFIG_DEFAULT_FONT);
 	
+	line = 0;
 	while( (c = fgetline( fconf, buffer)) != -1 )
 	{
 		char *key, *value;

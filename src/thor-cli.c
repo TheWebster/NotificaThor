@@ -118,7 +118,7 @@ main( int argc, char *argv[])
 				msg.image_len += strlen( optarg) + 1;
 				msg.image      = (char*)realloc( msg.image, msg.image_len);
 				cpycat( msg.image + image_len_tmp, optarg);
-				image_len_tmp += msg.image_len;
+				image_len_tmp  = msg.image_len;
 				break;
 			
 			case 'b':
@@ -149,7 +149,7 @@ main( int argc, char *argv[])
 	
 	msg.image_len++;
 	msg.image = (char*)realloc( msg.image, msg.image_len);
-	msg.image[msg.image_len] = '\0';
+	msg.image[msg.image_len - 1] = '\0';
 	
 	if( (sockfd = socket( AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
 		perror( "Creating socket");
