@@ -374,15 +374,30 @@ show_win( thor_message *msg)
 		
 		/** get geometry **/
 		window->extents[2] = NOTE_WIDTH;
-		window->extents[3] = theme.image.height + 2*theme.padtoborder_y;
+		window->extents[3] = theme.image.height;
 		
+		if( msg->message_len > 1 ) {
+			text = prepare_text( msg->message, theme.text.font, NOTE_WIDTH - 2*theme.padtoborder_x - theme.image.width - 20);
+			window->extents[3] = ( text->height > window->extents[3] ) ? text->height : window->extents[3];
+		}
+		
+		window->extents[3] += 2*theme.padtoborder_y;
+		
+		/** get postions **/
 		theme.image.x = theme.padtoborder_x;
 		theme.image.y = window->extents[3] / 2 - theme.image.height / 2;
+		
+		theme.text.x = theme.padtoborder_x + theme.image.width + 20;
+		theme.text.y = window->extents[3] / 2 - text->height / 2;
 		
 		/** set window position (bottom right) **/
 		window->extents[0] = screen->width_in_pixels  - (window->extents[2] + PAD_BORDER);
 		window->extents[1] = screen->height_in_pixels - stack_height - window->extents[3];
 		stack_height      += window->extents[3] + PAD_WINS;
+		
+		#ifdef VERBOSE
+		print_coords( window->extents, &theme, text);
+		#endif
 	}
 	else {
 		window = &wins[config_notifications];
