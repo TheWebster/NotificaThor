@@ -61,6 +61,7 @@ print_message( thor_message *msg)
 	thor_log( LOG_DEBUG, "  Query PID = %d", msg->flags & COM_QUERY);
 	thor_log( LOG_DEBUG, "  No Image  = %d", (msg->flags & COM_NO_IMAGE) >> 1);
 	thor_log( LOG_DEBUG, "  No Bar    = %d", (msg->flags & COM_NO_BAR) >> 2);
+	thor_log( LOG_DEBUG, "  Note      = %d", (msg->flags & COM_NOTE) >> 3);
 	thor_log( LOG_DEBUG, "  Timeout   = %f", msg->timeout);
 	thor_log( LOG_DEBUG, "  Image_len = %d", msg->image_len);
 	thor_log( LOG_DEBUG, "  Images    = \"%s\"", str_read);

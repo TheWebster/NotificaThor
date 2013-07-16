@@ -139,15 +139,17 @@ parse_coord( char *string, coord_t *target)
 static void
 print_config()
 {
-	thor_log( LOG_DEBUG, "  use_argb            = %d", config_use_argb);
-	thor_log( LOG_DEBUG, "  use_xshape          = %d", config_use_xshape);
-	thor_log( LOG_DEBUG, "  default_theme       = \"%s\"", config_default_theme);
-	thor_log( LOG_DEBUG, "  default_font        = \"%s\"", config_default_font);
-	thor_log( LOG_DEBUG, "  osd_default_timeout = %f", config_osd_default_timeout);
-	thor_log( LOG_DEBUG, "  osd_default_x       = %d, abs = %d", config_osd_default_x.coord,
-	                                                             config_osd_default_x.abs_flag);
-	thor_log( LOG_DEBUG, "  osd_default_y       = %d, abs = %d", config_osd_default_y.coord,
-	                                                             config_osd_default_y.abs_flag);
+	thor_log( LOG_DEBUG, "  use_argb             = %d", config_use_argb);
+	thor_log( LOG_DEBUG, "  use_xshape           = %d", config_use_xshape);
+	thor_log( LOG_DEBUG, "  default_theme        = \"%s\"", config_default_theme);
+	thor_log( LOG_DEBUG, "  default_font         = \"%s\"", config_default_font);
+	thor_log( LOG_DEBUG, "  osd_default_timeout  = %f", config_osd_default_timeout);
+	thor_log( LOG_DEBUG, "  osd_default_x        = %d, abs = %d", config_osd_default_x.coord,
+	                                                              config_osd_default_x.abs_flag);
+	thor_log( LOG_DEBUG, "  osd_default_y        = %d, abs = %d", config_osd_default_y.coord,
+	                                                              config_osd_default_y.abs_flag);
+	thor_log( LOG_DEBUG, "  notifications        = %d", config_notifications);
+	thor_log( LOG_DEBUG, "  note_default_timeout = %d", config_note_default_timeout);
 };
 #endif /* VERBOSE */
 
