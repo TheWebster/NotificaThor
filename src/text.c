@@ -560,10 +560,11 @@ draw_text( cairo_t *cr, text_box_t *text, text_t *text_theme)
 					for( i = 0; i < text_theme->surface.nlayers; i++ ) {
 						cairo_translate( cr, 0, l * text_theme->font->ext.height);
 						cairo_transform( cr, &source_m);
-						set_layer( cr, &text_theme->surface.layer[i]);
-						cairo_set_matrix( cr, &font_m);
-						cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
-						cairo_stroke_preserve( cr);
+						if( set_layer( cr, &text_theme->surface.layer[i]) == 0 ) {
+							cairo_set_matrix( cr, &font_m);
+							cairo_show_glyphs( cr, frag->glyphs, frag->nglyphs);
+							cairo_stroke_preserve( cr);
+						}
 					}
 					
 					cairo_new_path( cr);
