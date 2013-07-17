@@ -52,7 +52,8 @@ static int              has_xshape = 0;
 static thor_theme       theme = {0};
 
 /** config from NotificaThor.c **/
-extern int  xerror;
+extern int xerror;
+extern int self_pipe[];
 
 
 /*
@@ -61,12 +62,26 @@ extern int  xerror;
 static void
 timeout_handler( union sigval sv)
 {
-	xcb_unmap_window( con, wins[sv.sival_int].win);
-	xcb_flush(con);
-	sem_wait( &wins[sv.sival_int].mapped);
+	char start_byte = 0;
 	
-	if( sv.sival_int < config_notifications ) {
-		remove_note( &wins[sv.sival_int]);
+	
+	write( self_pipe[1], &start_byte, 1);
+	write( self_pipe[1], &sv.sival_int, sizeof(int));
+};
+
+
+/*
+ * Close a window.
+ */
+void
+close_win( int window)
+{
+	xcb_unmap_window( con, wins[window].win);
+	xcb_flush(con);
+	sem_wait( &wins[window].mapped);
+	
+	if( window < config_notifications ) {
+		remove_note( &wins[window]);
 	}
 };
 

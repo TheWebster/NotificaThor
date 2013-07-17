@@ -38,6 +38,7 @@ static char*        socket_path;
 
 int xerror = 0;
 int inofd = -1;
+int self_pipe[2];
 
 
 #ifdef VERBOSE
@@ -162,7 +163,7 @@ handle_message( int sockfd)
 static void
 sig_handler( int sig)
 {
-	sig_received = sig;
+	write( self_pipe[1], (char*)&sig, 1);
 	return;
 };
 
@@ -178,6 +179,13 @@ event_loop()
 	int                 ret        = 1;
 	struct sigaction    term_sa    = {{0}};
 	
+	
+	/** initialize self piping trick **/
+	if( pipe( self_pipe) == -1 ) {
+		thor_errlog( LOG_CRIT, "Initializing signal pipe");
+		goto err;
+	}
+	fcntl( self_pipe[1], F_SETFD, O_NONBLOCK);
 	
 	/** install signalhandler **/
 	term_sa.sa_handler = sig_handler;
@@ -211,6 +219,8 @@ event_loop()
 		
 		FD_ZERO( &set);
 		FD_SET( sockfd, &set);
+		FD_SET( self_pipe[0], &set);
+		maxfd = ( self_pipe[0] > maxfd ) ? self_pipe[0] : maxfd;
 		if( inofd != -1 ) {
 			FD_SET( inofd, &set);
 			maxfd = ( inofd > maxfd ) ? inofd : maxfd;
@@ -218,13 +228,37 @@ event_loop()
 		
 		
 		if( select( maxfd + 1, &set, NULL, NULL, NULL) == -1 ) {
-			if( errno != EINTR )
+			if( errno != EINTR ) {
 				thor_log( LOG_CRIT, "select()");
-			goto err_x;
+				goto err_x;
+			}
+		}
+		
+		
+		/** signal or timeout **/
+		if( FD_ISSET( self_pipe[0], &set) ) {
+			char start_byte;
+			int  win_to_close;
+			
+			
+			read( self_pipe[0], &start_byte, 1);
+			if( start_byte == 0 ) {
+				read( self_pipe[0], &win_to_close, sizeof(int));
+				close_win( win_to_close);
+			}
+			else {
+				if( xerror )
+					thor_log( LOG_DEBUG, "X11: IO-Error ocurred (most likely X-Server exited).");
+				else {
+					thor_log( LOG_DEBUG, "Received signal %s.", strsignal( start_byte));
+					ret = 0;
+				}
+				goto err_x;
+			}
 		}
 		
 		/** message via thor-cli **/
-		if( FD_ISSET( sockfd, &set) ) {
+		else if( FD_ISSET( sockfd, &set) ) {
 			if( handle_message( sockfd) == -1 )
 				goto err_x;
 		}
@@ -247,17 +281,11 @@ event_loop()
   err_x:
 	cleanup_x();
   err:
-	if( sig_received ) {
-		if( xerror )
-			thor_log( LOG_DEBUG, "X11: IO-Error ocurred (most likely X-Server exited).");
-		else {
-			thor_log( LOG_DEBUG, "Received signal %s.", strsignal( sig_received));
-			ret = 0;
-		}
-	}
 	thor_log( LOG_DEBUG, "Exiting NotificaThor...");
 	close( sockfd);
 	close( inofd);
+	close( self_pipe[0]);
+	close( self_pipe[1]);
 	remove( socket_path);
 	go_up( socket_path);
 	remove( socket_path);
