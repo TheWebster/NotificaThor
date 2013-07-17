@@ -20,7 +20,7 @@ extern char         *image_string;
 #define CONTROL_NONE             0
 #define CONTROL_SAVE_MATRIX      (1 << 0)
 #define CONTROL_USE_MATRIX       (1 << 1)
-void set_layer( cairo_t *cr, layer_t *layer);
+int  set_layer( cairo_t *cr, layer_t *layer);
 
 void draw_surface( cairo_t *cr, surface_t *surface, int control,
                    double x, double y, double width, double height);

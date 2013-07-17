@@ -195,8 +195,10 @@ bordermap( surface_t *surface, double x0, double y0, double x1, double y1,
  * 
  * Parameters: cr      - Cairo context.
  *             surface - surface_t containing the layers.
+ * 
+ * Returns: 0 on success and -1 when nothing can be drawn.
  */
-void
+int
 set_layer( cairo_t *cr, layer_t *layer)
 {
 	cairo_pattern_t *pat;
@@ -206,12 +208,12 @@ set_layer( cairo_t *cr, layer_t *layer)
 	/** empty png pattern **/
 	if( layer->pattern == NULL ) {
 		if( !image_string || !*image_string )
-			return;
+			return -1;
 		
 		pat    = get_pattern_for_png( image_string);
 		if( (status = cairo_pattern_status( pat)) != CAIRO_STATUS_SUCCESS ) {
 			thor_log( LOG_ERR, "Reading '%s': %s.", image_string, cairo_status_to_string( status));
-			return;
+			return -1;
 		}
 		
 		image_string += strlen( image_string) + 1;
@@ -221,6 +223,8 @@ set_layer( cairo_t *cr, layer_t *layer)
 	
 	cairo_set_source( cr, pat);
 	cairo_set_operator( cr, layer->operator);
+	
+	return 0;
 };
 	
 /*
@@ -256,8 +260,8 @@ draw_surface( cairo_t *cr, surface_t *surface, int control,
 	}
 	else {
 		for( i = 0; i < surface->nlayers; i++ ) {
-			set_layer( cr, &surface->layer[i]);
-			cairo_fill_preserve( cr);
+			if( set_layer( cr, &surface->layer[i]) == 0 )
+				cairo_fill_preserve( cr);
 		}
 	}
 			
