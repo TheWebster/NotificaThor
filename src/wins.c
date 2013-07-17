@@ -369,7 +369,7 @@ print_coords( uint32_t *cval, thor_theme *theme, text_box_t *text)
  * 
  * Parameters: msg - Pointer to thor_message.
  * 
- * Returns: 0 on success and -1 on error.
+ * Returns: 0 on success and -1 when no notification window is available.
  */
 int
 show_win( thor_message *msg)
@@ -418,7 +418,7 @@ show_win( thor_message *msg)
 		/** stop here if there is nothing to be done **/
 		if( msg->flags & COM_NO_IMAGE && msg->flags & COM_NO_BAR && msg->message_len < 2 ) {
 			thor_log( LOG_DEBUG, "No elements to be drawn.");
-			return -1;
+			return 0;
 		}
 		
 		/** get custom geometry **/

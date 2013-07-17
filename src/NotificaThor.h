@@ -32,6 +32,8 @@
 	"    -V, --version    Print version info.\n"
 
 
+#define MSG_QUEUE_LEN 16
+
 
 /******** utils ********/
 void go_up( char *string);

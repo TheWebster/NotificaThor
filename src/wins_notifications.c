@@ -39,9 +39,8 @@ thor_window_t
 	int i = 0;
 	
 	
-	if( next_stack == config_notifications ) {
+	if( next_stack == config_notifications )
 		return NULL;
-	}
 	
 	
 	while( wins[i].stack_pos != -1 )

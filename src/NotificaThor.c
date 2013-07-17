@@ -36,6 +36,10 @@ static sig_atomic_t sig_received = 0;
 static int          sockfd = 0;
 static char*        socket_path;
 
+static thor_message msg_queue[MSG_QUEUE_LEN];
+static thor_message *next_msg = msg_queue;
+static int          nmessages = 0;
+
 int xerror = 0;
 int inofd = -1;
 int self_pipe[2];
@@ -147,9 +151,18 @@ handle_message( int sockfd)
 			msg.timeout = config_osd_default_timeout;
 	}
 		
-	show_win( &msg);
-		
-	free_message( &msg);
+	if( show_win( &msg) == -1 ) {
+		if( nmessages == MSG_QUEUE_LEN ) {
+			thor_log( LOG_ERR, "Message queue is full. Discarding message...");
+			free_message( &msg);
+		}
+		else {
+			next_msg[nmessages] = msg;
+			nmessages++;
+		}
+	}
+	else
+		free_message( &msg);
 	
   end:
 	close( clsockfd);
@@ -176,6 +189,7 @@ sig_handler( int sig)
 static int
 event_loop()
 {
+	int                 i;
 	int                 ret        = 1;
 	struct sigaction    term_sa    = {{0}};
 	
@@ -245,6 +259,14 @@ event_loop()
 			if( start_byte == 0 ) {
 				read( self_pipe[0], &win_to_close, sizeof(int));
 				close_win( win_to_close);
+				
+				if( nmessages ) {
+					show_win( next_msg);
+					free_message( next_msg);
+					
+					next_msg++;
+					nmessages--;
+				}
 			}
 			else {
 				if( xerror )
@@ -269,6 +291,11 @@ event_loop()
 			close( inofd);
 			cleanup_x();
 			
+			for( i = 0; i < nmessages; i++ )
+				free_message( &next_msg[i]);
+			next_msg  = msg_queue;
+			nmessages = 0;
+			
 			inofd = inotify_init();
 			parse_conf();
 			parse_default_theme();
@@ -286,6 +313,10 @@ event_loop()
 	close( inofd);
 	close( self_pipe[0]);
 	close( self_pipe[1]);
+	
+	for( i = 0; i < nmessages; i++ )
+		free_message( &next_msg[i]);
+	
 	remove( socket_path);
 	go_up( socket_path);
 	remove( socket_path);
