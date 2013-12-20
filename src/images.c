@@ -103,8 +103,11 @@ load_image_cache()
 	
 	
 	if( (cache_file = fopen( image_cache_path, "r")) == NULL ) {
-		thor_errlog( LOG_ERR, "Could not open image cache file");
-		return -1;
+		if( errno != ENOENT ) {
+			thor_errlog( LOG_ERR, "Could not open image cache file");
+			return -1;
+		}
+		return 0;
 	}
 	
 	fread( image_cache, sizeof(image_cache_t), IMAGE_CACHE_SIZE, cache_file);
