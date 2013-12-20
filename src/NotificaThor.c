@@ -30,6 +30,7 @@
 #include "wins.h"
 #include "NotificaThor.h"
 #include "logging.h"
+#include "images.h"
 
 
 static sig_atomic_t sig_received = 0;
@@ -235,6 +236,8 @@ event_loop()
 		goto err_x;
 	}
 	
+	load_image_cache();
+	
 	/** event loop **/
 	thor_log( LOG_DEBUG, "NotificaThor started (%d). Awaiting connections.", getpid());
 	while( 1 )
@@ -288,6 +291,7 @@ event_loop()
 	thor_log( LOG_DEBUG, "Exiting NotificaThor...");
 	close( sockfd);
 	close( inofd);
+	save_image_cache();
 	remove( socket_path);
 	go_up( socket_path);
 	remove( socket_path);
@@ -361,6 +365,8 @@ main( int argc, char *argv[])
 	mkdir( socket_path, 0755);
 	strcat( socket_path, "/NotificaThor");
 	mkdir( socket_path, 0700);
+	
+	cpycat( cpycat( image_cache_path, socket_path), "/image_cache");
 	strcat( socket_path, "/socket");
 	
 	cpycat( saddr.sun_path, socket_path);

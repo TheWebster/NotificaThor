@@ -8,6 +8,7 @@
 \* ************************************************************* */
 
 #include <cairo/cairo.h>
+#include <errno.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -30,6 +31,8 @@ typedef struct
 
 static image_cache_t image_cache[IMAGE_CACHE_SIZE] = {{0}};
 static int           next_im_cache = 0;
+
+char image_cache_path[FILENAME_MAX];
 
 
 /*
@@ -80,21 +83,94 @@ get_pattern_for_png( char *filename)
 	image_cache[next_im_cache].pattern = pattern;
 	cpycat( image_cache[next_im_cache].filename, filename);
 	
+	next_im_cache++;
+	if( next_im_cache == IMAGE_CACHE_SIZE )
+		next_im_cache = 0;
+	
 	return pattern;
 };
 
 
 /*
- * Free the image cache
+ * Loads image_cache from file and creates cairo_patterns for every filename.
+ * Returns: 0 on success, -1 on read error.
  */
-void
-free_image_cache()
+int
+load_image_cache()
 {
-	int i;
+	int  i;
+	FILE *cache_file;
 	
+	
+	if( (cache_file = fopen( image_cache_path, "r")) == NULL ) {
+		thor_errlog( LOG_ERR, "Could not open image cache file");
+		return -1;
+	}
+	
+	fread( image_cache, sizeof(image_cache_t), IMAGE_CACHE_SIZE, cache_file);
+	fclose( cache_file);
+	
+	for( i = 0; i < IMAGE_CACHE_SIZE; i++ ) {
+		if( image_cache[i].used ) {
+			cairo_status_t  status;
+			cairo_matrix_t  scaling;
+			cairo_surface_t *surface = cairo_image_surface_create_from_png( image_cache[i].filename);
+			cairo_pattern_t *pattern = cairo_pattern_create_for_surface( surface);
+			
+			
+			if( (status = cairo_pattern_status( pattern)) != CAIRO_STATUS_SUCCESS ) {
+				cairo_surface_destroy( surface);
+				cairo_pattern_destroy( pattern);
+				thor_log( LOG_ERR, "Could not create pattern for file '%s': %s", image_cache[i].filename,
+		                  cairo_status_to_string( status));
+		        image_cache[i].used = 0;
+			}
+			else {
+#ifdef VERBOSE
+				thor_log( LOG_DEBUG, "Created image cache for '%s'...", image_cache[i].filename);
+#endif
+				cairo_matrix_init_scale( &scaling, cairo_image_surface_get_width( surface),
+	                                     cairo_image_surface_get_height( surface));
+				cairo_pattern_set_matrix( pattern, &scaling);
+				cairo_surface_destroy( surface);
+				image_cache[i].pattern = pattern;
+			}
+		}
+	}
+	
+	return 0;
+};
+			
+			
+			
+			
+/*
+ * Saves image_cache in a file and frees the array.
+ * Returns: 0 on success, -1 on error.
+ */
+int
+save_image_cache()
+{
+	int  i;
+	FILE *cache_file;
+	
+	
+#ifdef VERBOSE
+	thor_log( LOG_DEBUG, "Saving image cache...");
+#endif
+
+	if( (cache_file = fopen( image_cache_path, "w")) == NULL ) {
+		thor_errlog( LOG_ERR, "Could not write out image cache");
+		return -1;
+	}
+	
+	fwrite( image_cache, sizeof(image_cache_t), IMAGE_CACHE_SIZE, cache_file);
+	fclose( cache_file);
 	
 	for( i = 0; i < IMAGE_CACHE_SIZE; i++ ) {
 		if( image_cache[i].used )
 			cairo_pattern_destroy( image_cache[i].pattern);
 	}
+	
+	return 0;
 };

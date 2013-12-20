@@ -35,7 +35,6 @@
 #include "drawing.h"
 #include "NotificaThor.h"
 #include "logging.h"
-#include "images.h"
 
 
 typedef struct
@@ -570,7 +569,6 @@ cleanup_x()
 	xcb_destroy_window( con, osd.win);
 	sem_destroy( &osd.mapped);
 	pthread_cancel( xevents);
-	free_image_cache();
 	xcb_flush( con);
 	xcb_disconnect( con);
 	
@@ -591,6 +589,12 @@ kill_osd()
 };
 
 
+/*
+ * Queries the RGB values for a named color from the X Server.
+ * Parameters: string - The name of the color.
+ *             color  - Pointer to where the color should be stored.
+ * Returns: 0 on success, -1 on error.
+ */
 int
 alloc_named_color( char *string, uint32_t *color)
 {
