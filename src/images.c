@@ -113,6 +113,7 @@ load_image_cache()
 	fread( image_cache, sizeof(image_cache_t), IMAGE_CACHE_SIZE, cache_file);
 	fclose( cache_file);
 	
+	/** create cairo_patterns from files **/
 	for( i = 0; i < IMAGE_CACHE_SIZE; i++ ) {
 		if( image_cache[i].used ) {
 			cairo_status_t  status;
@@ -170,6 +171,7 @@ save_image_cache()
 	fwrite( image_cache, sizeof(image_cache_t), IMAGE_CACHE_SIZE, cache_file);
 	fclose( cache_file);
 	
+	/** free image cache **/
 	for( i = 0; i < IMAGE_CACHE_SIZE; i++ ) {
 		if( image_cache[i].used )
 			cairo_pattern_destroy( image_cache[i].pattern);
