@@ -115,6 +115,10 @@ If there is no such file, it is searched in
 .I $XDG_CACHE_HOME/NotificaThor/socket
 Socket to communication between NotificaThor and thor-cli.
 
+.TP
+.I $XDG_CACHE_HOME/NotificaThor/image_cache
+File containing the image cache to be loaded on next startup.
+
 
 
 .SH SIGNALS
