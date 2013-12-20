@@ -216,9 +216,8 @@ event_loop()
 	if( (inofd = inotify_init()) == -1 )
 		thor_errlog( LOG_ERR, "Initializing Inotify");
 		
-	/** parse config file and theme**/
+	/** parse config file**/
 	parse_conf();
-	parse_default_theme();
 	
 	/** install timer **/
 	ev_timeout.sigev_notify = SIGEV_THREAD;
@@ -228,6 +227,8 @@ event_loop()
 	/** prepare window **/
 	if( prepare_x() == -1 )
 		goto err;
+	
+	parse_default_theme();
 	
 	if( listen( sockfd, 5) == -1 ) {
 		thor_errlog( LOG_CRIT, "Listening on socket");

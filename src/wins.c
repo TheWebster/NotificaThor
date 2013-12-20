@@ -48,6 +48,7 @@ typedef struct
 static xcb_connection_t *con;
 static xcb_screen_t     *screen;
 static xcb_visualtype_t *visual = NULL;
+static xcb_colormap_t   cmap = 0;
 static thor_window_t    osd;
 static pthread_t        xevents;
 static int              has_xshape = 0;
@@ -116,7 +117,6 @@ prepare_x()
 	xcb_screen_iterator_t     scr_iter;
 	xcb_depth_iterator_t      depth_iter;
 	xcb_visualtype_iterator_t vt_iter;
-	xcb_colormap_t            cmap = 0;
 	xcb_intern_atom_cookie_t  wmtype_cookie, note_cookie;
 	xcb_intern_atom_reply_t   *wmtype_reply, *note_reply;
 	
@@ -588,4 +588,27 @@ kill_osd()
 	sem_wait( &osd.mapped);
 	xcb_flush( con);
 	return 0;
+};
+
+
+int
+alloc_named_color( char *string, uint32_t *color)
+{
+	int                            ret       = -1;
+	xcb_generic_error_t            *err      = NULL;
+	xcb_alloc_named_color_cookie_t color_ck  = xcb_alloc_named_color( con, cmap, strlen(string), string);
+	xcb_alloc_named_color_reply_t  *color_rp = xcb_alloc_named_color_reply( con, color_ck, &err);
+	
+	
+	if( err == NULL ) {
+		*color = 0xff000000 |
+				 ((color_rp->exact_red / 256) << 16) |
+				 ((color_rp->exact_green / 256) << 8) |
+				 (color_rp->exact_blue / 256);
+		ret = 0;
+	}
+	
+	free( color_rp);
+	
+	return ret;
 };

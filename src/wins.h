@@ -14,3 +14,4 @@ int  kill_osd();
 void cleanup_x();
 void query_extensions();
 void parse_default_theme();
+int  alloc_named_color( char *string, uint32_t *color);

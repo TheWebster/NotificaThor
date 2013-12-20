@@ -28,6 +28,7 @@
 #include "logging.h"
 #include "theme_symbols.h"
 #include "images.h"
+#include "wins.h"
 
 
 #define MAX_TOK_LEN      FILENAME_MAX + 128
@@ -138,7 +139,8 @@ fgettok( FILE *stream, char *buffer)
 
 
 /*
- * Takes a string of a 12bit, 16bit, 24bit or 32bit [a]rgb value
+ * Takes a string of a 12bit, 16bit, 24bit or 32bit [a]rgb value or
+ * a named color
  * and stores it in an pointer to an int.
  * 
  * Parameters: ptr   - Pointer to string.
@@ -152,42 +154,44 @@ parse_color( char *ptr, uint32_t *color)
 	char *endptr;
 	
 	
-	if( *ptr != '#' ) {
-		thor_log( LOG_ERR, "%s%d - Invalid color format (missing leading '#').", log_msg, line);
-		return -1;
-	}
-	ptr++;
+	if( *ptr == '#' ) {
+		ptr++;
 	
-	*color = strtoll( ptr, &endptr, 16);
-	if( *endptr != '\0' ) {
-		thor_log( LOG_ERR, "%s%d - '%s' is not a valid hex value.", log_msg, line, ptr);
-		return -1;
-	}
-	switch( strlen( ptr) ) {
-		case 3: // nibble rgb '#fff' -> #f0f0f0
-			*color = 0xff000000 | 
-			         ((*color&0xf00) << 12) |
-			         ((*color&0x0f0) << 8)  |
-			         ((*color&0x00f) << 4);
-			break;
-		
-		case 4: // nibble argb '#abcd' -> #a0b0c0d0
-			*color = ((*color&0xf000) << 16) |
-			         ((*color&0x0f00) << 12) |
-			         ((*color&0x00f0) << 8)  |
-			         ((*color&0x000f) << 4);
-			break;
-		
-		case 6: // byte rgb
-			*color |= 0xff000000;
-			break;
-		
-		case 8: // byte argb
-			break;
-		
-		default: // invalid format
-			thor_log( LOG_ERR, "%s%d - '%s' is not a valid color format.", log_msg, line, ptr);
+		*color = strtoll( ptr, &endptr, 16);
+		if( *endptr != '\0' ) {
+			thor_log( LOG_ERR, "%s%d - '%s' is not a valid hex value.", log_msg, line, ptr);
 			return -1;
+		}
+		switch( strlen( ptr) ) {
+			case 3: // nibble rgb '#fff' -> #f0f0f0
+				*color = 0xff000000 | 
+						 ((*color&0xf00) << 12) |
+						 ((*color&0x0f0) << 8)  |
+						 ((*color&0x00f) << 4);
+				break;
+			
+			case 4: // nibble argb '#abcd' -> #a0b0c0d0
+				*color = ((*color&0xf000) << 16) |
+						 ((*color&0x0f00) << 12) |
+						 ((*color&0x00f0) << 8)  |
+						 ((*color&0x000f) << 4);
+				break;
+			
+			case 6: // byte rgb
+				*color |= 0xff000000;
+				break;
+			
+			case 8: // byte argb
+				break;
+			
+			default: // invalid format
+				thor_log( LOG_ERR, "%s%d - '%s' is not a valid RGB color format.", log_msg, line, ptr);
+				return -1;
+		}
+	}
+	else if( alloc_named_color( ptr, color) == -1 ) {
+		thor_log( LOG_ERR, "%s%d - Cannot resolve color '%s').", log_msg, line, ptr);
+		return -1;
 	}
 	
 	return 0;
