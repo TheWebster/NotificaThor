@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 0.5.0
+* Bugfix: Image cache now behaving correctly.
+* Saving image cache to file and loading it on next startup
+* Colors can now be specified by name.
 
 ## 0.4.2
 * Bugfix: Line counting for config file now works correctly.

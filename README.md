@@ -46,6 +46,8 @@ If you want to install to a fake root directory (e.g. for package creation) use 
 	make install prefix=/fake/root
 The subdirectories *usr/bin*, *usr/share/man* and *etc* must exist.
 
+The daemon will create the directory ``$XDG_CACHE_HOME/NotificaThor`` with the file ``image_cache`` in it.
+
 Debugging
 ---------
 

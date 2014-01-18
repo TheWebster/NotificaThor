@@ -37,7 +37,6 @@
 #include "drawing.h"
 #include "NotificaThor.h"
 #include "logging.h"
-#include "images.h"
 
 
 xcb_connection_t *con;
@@ -46,6 +45,7 @@ thor_window_t    *wins;
 
 static xcb_screen_t     *screen;
 static xcb_visualtype_t *visual = NULL;
+static xcb_colormap_t   cmap = 0;
 static pthread_t        xevents;
 static int              has_xshape = 0;
 
@@ -171,7 +171,6 @@ prepare_x()
 	xcb_screen_iterator_t     scr_iter;
 	xcb_depth_iterator_t      depth_iter;
 	xcb_visualtype_iterator_t vt_iter;
-	xcb_colormap_t            cmap = 0;
 	xcb_intern_atom_cookie_t  wmtype_cookie, note_cookie;
 	xcb_intern_atom_reply_t   *wmtype_reply, *note_reply;
 	struct sigevent           ev_timeout = {{0}};
@@ -686,7 +685,6 @@ cleanup_x()
 	
 	
 	pthread_cancel( xevents);
-	free_image_cache();
 	
 	/** destroy windows **/
 	for( i = 0; i <= config_notifications; i++ ) {
@@ -703,4 +701,33 @@ cleanup_x()
 	
 	xcb_flush( con);
 	xcb_disconnect( con);
+};
+
+
+/*
+ * Queries the RGB values for a named color from the X Server.
+ * Parameters: string - The name of the color.
+ *             color  - Pointer to where the color should be stored.
+ * Returns: 0 on success, -1 on error.
+ */
+int
+alloc_named_color( char *string, uint32_t *color)
+{
+	int                            ret       = -1;
+	xcb_generic_error_t            *err      = NULL;
+	xcb_alloc_named_color_cookie_t color_ck  = xcb_alloc_named_color( con, cmap, strlen(string), string);
+	xcb_alloc_named_color_reply_t  *color_rp = xcb_alloc_named_color_reply( con, color_ck, &err);
+	
+	
+	if( err == NULL ) {
+		*color = 0xff000000 |
+				 ((color_rp->exact_red / 256) << 16) |
+				 ((color_rp->exact_green / 256) << 8) |
+				 (color_rp->exact_blue / 256);
+		ret = 0;
+	}
+	
+	free( color_rp);
+	
+	return ret;
 };

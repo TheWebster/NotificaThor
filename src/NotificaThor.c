@@ -30,6 +30,7 @@
 #include "wins.h"
 #include "NotificaThor.h"
 #include "logging.h"
+#include "images.h"
 
 
 static sig_atomic_t sig_received = 0;
@@ -210,18 +211,21 @@ event_loop()
 	if( (inofd = inotify_init()) == -1 )
 		thor_errlog( LOG_ERR, "Initializing Inotify");
 		
-	/** parse config file and theme**/
+	/** parse config file**/
 	parse_conf();
-	parse_default_theme();
 	
 	/** prepare window **/
 	if( prepare_x() == -1 )
 		goto err;
 	
+	parse_default_theme();
+	
 	if( listen( sockfd, 5) == -1 ) {
 		thor_errlog( LOG_CRIT, "Listening on socket");
 		goto err_x;
 	}
+	
+	load_image_cache();
 	
 	/** event loop **/
 	thor_log( LOG_DEBUG, "NotificaThor started (%d). Awaiting connections.", getpid());
@@ -317,6 +321,7 @@ event_loop()
 	for( i = 0; i < nmessages; i++ )
 		free_message( &next_msg[i]);
 	
+	save_image_cache();
 	remove( socket_path);
 	go_up( socket_path);
 	remove( socket_path);
@@ -389,6 +394,8 @@ main( int argc, char *argv[])
 	mkdir( socket_path, 0755);
 	strcat( socket_path, "/NotificaThor");
 	mkdir( socket_path, 0700);
+	
+	cpycat( cpycat( image_cache_path, socket_path), "/image_cache");
 	strcat( socket_path, "/socket");
 	
 	cpycat( saddr.sun_path, socket_path);
